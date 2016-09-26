@@ -1,0 +1,27 @@
+{
+  "name": "data-forge-js-examples-and-tests",
+  "version": "1.0.0",
+  "description": "Various examples and tests for the [data-forge-js repo](https://github.com/data-forge/data-forge-js).",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/data-forge/data-forge-js-examples-and-tests.git"
+  },
+  "author": "ashley@codecapers.com.au",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/data-forge/data-forge-js-examples-and-tests/issues"
+  },
+  "homepage": "https://github.com/data-forge/data-forge-js-examples-and-tests#readme",
+  "dependencies": {
+    "linq": "^3.0.5",
+    "moment": "^2.15.1",
+    "promised-mongo": "^1.2.0"
+  }
+}

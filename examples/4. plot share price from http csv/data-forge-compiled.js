@@ -1,10 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
-window.dataForge = require('../../index');
+window.dataForge = require('../../../data-forge-js/index.js');
 window.moment = require('moment');
 window.E = require('linq');
 
-},{"../../index":3,"linq":2,"moment":44}],2:[function(require,module,exports){
+},{"../../../data-forge-js/index.js":4,"linq":2,"moment":3}],2:[function(require,module,exports){
 /*--------------------------------------------------------------------------
  * linq.js - LINQ for JavaScript
  * ver 3.0.4-Beta5 (Jun. 20th, 2013)
@@ -3023,22 +3023,4255 @@ window.E = require('linq');
     }
 })(this);
 },{}],3:[function(require,module,exports){
+//! moment.js
+//! version : 2.15.1
+//! authors : Tim Wood, Iskren Chernev, Moment.js contributors
+//! license : MIT
+//! momentjs.com
+
+;(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    global.moment = factory()
+}(this, function () { 'use strict';
+
+    var hookCallback;
+
+    function utils_hooks__hooks () {
+        return hookCallback.apply(null, arguments);
+    }
+
+    // This is done to register the method called with moment()
+    // without creating circular dependencies.
+    function setHookCallback (callback) {
+        hookCallback = callback;
+    }
+
+    function isArray(input) {
+        return input instanceof Array || Object.prototype.toString.call(input) === '[object Array]';
+    }
+
+    function isObject(input) {
+        // IE8 will treat undefined and null as object if it wasn't for
+        // input != null
+        return input != null && Object.prototype.toString.call(input) === '[object Object]';
+    }
+
+    function isObjectEmpty(obj) {
+        var k;
+        for (k in obj) {
+            // even if its not own property I'd still call it non-empty
+            return false;
+        }
+        return true;
+    }
+
+    function isDate(input) {
+        return input instanceof Date || Object.prototype.toString.call(input) === '[object Date]';
+    }
+
+    function map(arr, fn) {
+        var res = [], i;
+        for (i = 0; i < arr.length; ++i) {
+            res.push(fn(arr[i], i));
+        }
+        return res;
+    }
+
+    function hasOwnProp(a, b) {
+        return Object.prototype.hasOwnProperty.call(a, b);
+    }
+
+    function extend(a, b) {
+        for (var i in b) {
+            if (hasOwnProp(b, i)) {
+                a[i] = b[i];
+            }
+        }
+
+        if (hasOwnProp(b, 'toString')) {
+            a.toString = b.toString;
+        }
+
+        if (hasOwnProp(b, 'valueOf')) {
+            a.valueOf = b.valueOf;
+        }
+
+        return a;
+    }
+
+    function create_utc__createUTC (input, format, locale, strict) {
+        return createLocalOrUTC(input, format, locale, strict, true).utc();
+    }
+
+    function defaultParsingFlags() {
+        // We need to deep clone this object.
+        return {
+            empty           : false,
+            unusedTokens    : [],
+            unusedInput     : [],
+            overflow        : -2,
+            charsLeftOver   : 0,
+            nullInput       : false,
+            invalidMonth    : null,
+            invalidFormat   : false,
+            userInvalidated : false,
+            iso             : false,
+            parsedDateParts : [],
+            meridiem        : null
+        };
+    }
+
+    function getParsingFlags(m) {
+        if (m._pf == null) {
+            m._pf = defaultParsingFlags();
+        }
+        return m._pf;
+    }
+
+    var some;
+    if (Array.prototype.some) {
+        some = Array.prototype.some;
+    } else {
+        some = function (fun) {
+            var t = Object(this);
+            var len = t.length >>> 0;
+
+            for (var i = 0; i < len; i++) {
+                if (i in t && fun.call(this, t[i], i, t)) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+    }
+
+    function valid__isValid(m) {
+        if (m._isValid == null) {
+            var flags = getParsingFlags(m);
+            var parsedParts = some.call(flags.parsedDateParts, function (i) {
+                return i != null;
+            });
+            var isNowValid = !isNaN(m._d.getTime()) &&
+                flags.overflow < 0 &&
+                !flags.empty &&
+                !flags.invalidMonth &&
+                !flags.invalidWeekday &&
+                !flags.nullInput &&
+                !flags.invalidFormat &&
+                !flags.userInvalidated &&
+                (!flags.meridiem || (flags.meridiem && parsedParts));
+
+            if (m._strict) {
+                isNowValid = isNowValid &&
+                    flags.charsLeftOver === 0 &&
+                    flags.unusedTokens.length === 0 &&
+                    flags.bigHour === undefined;
+            }
+
+            if (Object.isFrozen == null || !Object.isFrozen(m)) {
+                m._isValid = isNowValid;
+            }
+            else {
+                return isNowValid;
+            }
+        }
+        return m._isValid;
+    }
+
+    function valid__createInvalid (flags) {
+        var m = create_utc__createUTC(NaN);
+        if (flags != null) {
+            extend(getParsingFlags(m), flags);
+        }
+        else {
+            getParsingFlags(m).userInvalidated = true;
+        }
+
+        return m;
+    }
+
+    function isUndefined(input) {
+        return input === void 0;
+    }
+
+    // Plugins that add properties should also add the key here (null value),
+    // so we can properly clone ourselves.
+    var momentProperties = utils_hooks__hooks.momentProperties = [];
+
+    function copyConfig(to, from) {
+        var i, prop, val;
+
+        if (!isUndefined(from._isAMomentObject)) {
+            to._isAMomentObject = from._isAMomentObject;
+        }
+        if (!isUndefined(from._i)) {
+            to._i = from._i;
+        }
+        if (!isUndefined(from._f)) {
+            to._f = from._f;
+        }
+        if (!isUndefined(from._l)) {
+            to._l = from._l;
+        }
+        if (!isUndefined(from._strict)) {
+            to._strict = from._strict;
+        }
+        if (!isUndefined(from._tzm)) {
+            to._tzm = from._tzm;
+        }
+        if (!isUndefined(from._isUTC)) {
+            to._isUTC = from._isUTC;
+        }
+        if (!isUndefined(from._offset)) {
+            to._offset = from._offset;
+        }
+        if (!isUndefined(from._pf)) {
+            to._pf = getParsingFlags(from);
+        }
+        if (!isUndefined(from._locale)) {
+            to._locale = from._locale;
+        }
+
+        if (momentProperties.length > 0) {
+            for (i in momentProperties) {
+                prop = momentProperties[i];
+                val = from[prop];
+                if (!isUndefined(val)) {
+                    to[prop] = val;
+                }
+            }
+        }
+
+        return to;
+    }
+
+    var updateInProgress = false;
+
+    // Moment prototype object
+    function Moment(config) {
+        copyConfig(this, config);
+        this._d = new Date(config._d != null ? config._d.getTime() : NaN);
+        // Prevent infinite loop in case updateOffset creates new moment
+        // objects.
+        if (updateInProgress === false) {
+            updateInProgress = true;
+            utils_hooks__hooks.updateOffset(this);
+            updateInProgress = false;
+        }
+    }
+
+    function isMoment (obj) {
+        return obj instanceof Moment || (obj != null && obj._isAMomentObject != null);
+    }
+
+    function absFloor (number) {
+        if (number < 0) {
+            // -0 -> 0
+            return Math.ceil(number) || 0;
+        } else {
+            return Math.floor(number);
+        }
+    }
+
+    function toInt(argumentForCoercion) {
+        var coercedNumber = +argumentForCoercion,
+            value = 0;
+
+        if (coercedNumber !== 0 && isFinite(coercedNumber)) {
+            value = absFloor(coercedNumber);
+        }
+
+        return value;
+    }
+
+    // compare two arrays, return the number of differences
+    function compareArrays(array1, array2, dontConvert) {
+        var len = Math.min(array1.length, array2.length),
+            lengthDiff = Math.abs(array1.length - array2.length),
+            diffs = 0,
+            i;
+        for (i = 0; i < len; i++) {
+            if ((dontConvert && array1[i] !== array2[i]) ||
+                (!dontConvert && toInt(array1[i]) !== toInt(array2[i]))) {
+                diffs++;
+            }
+        }
+        return diffs + lengthDiff;
+    }
+
+    function warn(msg) {
+        if (utils_hooks__hooks.suppressDeprecationWarnings === false &&
+                (typeof console !==  'undefined') && console.warn) {
+            console.warn('Deprecation warning: ' + msg);
+        }
+    }
+
+    function deprecate(msg, fn) {
+        var firstTime = true;
+
+        return extend(function () {
+            if (utils_hooks__hooks.deprecationHandler != null) {
+                utils_hooks__hooks.deprecationHandler(null, msg);
+            }
+            if (firstTime) {
+                var args = [];
+                var arg;
+                for (var i = 0; i < arguments.length; i++) {
+                    arg = '';
+                    if (typeof arguments[i] === 'object') {
+                        arg += '\n[' + i + '] ';
+                        for (var key in arguments[0]) {
+                            arg += key + ': ' + arguments[0][key] + ', ';
+                        }
+                        arg = arg.slice(0, -2); // Remove trailing comma and space
+                    } else {
+                        arg = arguments[i];
+                    }
+                    args.push(arg);
+                }
+                warn(msg + '\nArguments: ' + Array.prototype.slice.call(args).join('') + '\n' + (new Error()).stack);
+                firstTime = false;
+            }
+            return fn.apply(this, arguments);
+        }, fn);
+    }
+
+    var deprecations = {};
+
+    function deprecateSimple(name, msg) {
+        if (utils_hooks__hooks.deprecationHandler != null) {
+            utils_hooks__hooks.deprecationHandler(name, msg);
+        }
+        if (!deprecations[name]) {
+            warn(msg);
+            deprecations[name] = true;
+        }
+    }
+
+    utils_hooks__hooks.suppressDeprecationWarnings = false;
+    utils_hooks__hooks.deprecationHandler = null;
+
+    function isFunction(input) {
+        return input instanceof Function || Object.prototype.toString.call(input) === '[object Function]';
+    }
+
+    function locale_set__set (config) {
+        var prop, i;
+        for (i in config) {
+            prop = config[i];
+            if (isFunction(prop)) {
+                this[i] = prop;
+            } else {
+                this['_' + i] = prop;
+            }
+        }
+        this._config = config;
+        // Lenient ordinal parsing accepts just a number in addition to
+        // number + (possibly) stuff coming from _ordinalParseLenient.
+        this._ordinalParseLenient = new RegExp(this._ordinalParse.source + '|' + (/\d{1,2}/).source);
+    }
+
+    function mergeConfigs(parentConfig, childConfig) {
+        var res = extend({}, parentConfig), prop;
+        for (prop in childConfig) {
+            if (hasOwnProp(childConfig, prop)) {
+                if (isObject(parentConfig[prop]) && isObject(childConfig[prop])) {
+                    res[prop] = {};
+                    extend(res[prop], parentConfig[prop]);
+                    extend(res[prop], childConfig[prop]);
+                } else if (childConfig[prop] != null) {
+                    res[prop] = childConfig[prop];
+                } else {
+                    delete res[prop];
+                }
+            }
+        }
+        for (prop in parentConfig) {
+            if (hasOwnProp(parentConfig, prop) &&
+                    !hasOwnProp(childConfig, prop) &&
+                    isObject(parentConfig[prop])) {
+                // make sure changes to properties don't modify parent config
+                res[prop] = extend({}, res[prop]);
+            }
+        }
+        return res;
+    }
+
+    function Locale(config) {
+        if (config != null) {
+            this.set(config);
+        }
+    }
+
+    var keys;
+
+    if (Object.keys) {
+        keys = Object.keys;
+    } else {
+        keys = function (obj) {
+            var i, res = [];
+            for (i in obj) {
+                if (hasOwnProp(obj, i)) {
+                    res.push(i);
+                }
+            }
+            return res;
+        };
+    }
+
+    var defaultCalendar = {
+        sameDay : '[Today at] LT',
+        nextDay : '[Tomorrow at] LT',
+        nextWeek : 'dddd [at] LT',
+        lastDay : '[Yesterday at] LT',
+        lastWeek : '[Last] dddd [at] LT',
+        sameElse : 'L'
+    };
+
+    function locale_calendar__calendar (key, mom, now) {
+        var output = this._calendar[key] || this._calendar['sameElse'];
+        return isFunction(output) ? output.call(mom, now) : output;
+    }
+
+    var defaultLongDateFormat = {
+        LTS  : 'h:mm:ss A',
+        LT   : 'h:mm A',
+        L    : 'MM/DD/YYYY',
+        LL   : 'MMMM D, YYYY',
+        LLL  : 'MMMM D, YYYY h:mm A',
+        LLLL : 'dddd, MMMM D, YYYY h:mm A'
+    };
+
+    function longDateFormat (key) {
+        var format = this._longDateFormat[key],
+            formatUpper = this._longDateFormat[key.toUpperCase()];
+
+        if (format || !formatUpper) {
+            return format;
+        }
+
+        this._longDateFormat[key] = formatUpper.replace(/MMMM|MM|DD|dddd/g, function (val) {
+            return val.slice(1);
+        });
+
+        return this._longDateFormat[key];
+    }
+
+    var defaultInvalidDate = 'Invalid date';
+
+    function invalidDate () {
+        return this._invalidDate;
+    }
+
+    var defaultOrdinal = '%d';
+    var defaultOrdinalParse = /\d{1,2}/;
+
+    function ordinal (number) {
+        return this._ordinal.replace('%d', number);
+    }
+
+    var defaultRelativeTime = {
+        future : 'in %s',
+        past   : '%s ago',
+        s  : 'a few seconds',
+        m  : 'a minute',
+        mm : '%d minutes',
+        h  : 'an hour',
+        hh : '%d hours',
+        d  : 'a day',
+        dd : '%d days',
+        M  : 'a month',
+        MM : '%d months',
+        y  : 'a year',
+        yy : '%d years'
+    };
+
+    function relative__relativeTime (number, withoutSuffix, string, isFuture) {
+        var output = this._relativeTime[string];
+        return (isFunction(output)) ?
+            output(number, withoutSuffix, string, isFuture) :
+            output.replace(/%d/i, number);
+    }
+
+    function pastFuture (diff, output) {
+        var format = this._relativeTime[diff > 0 ? 'future' : 'past'];
+        return isFunction(format) ? format(output) : format.replace(/%s/i, output);
+    }
+
+    var aliases = {};
+
+    function addUnitAlias (unit, shorthand) {
+        var lowerCase = unit.toLowerCase();
+        aliases[lowerCase] = aliases[lowerCase + 's'] = aliases[shorthand] = unit;
+    }
+
+    function normalizeUnits(units) {
+        return typeof units === 'string' ? aliases[units] || aliases[units.toLowerCase()] : undefined;
+    }
+
+    function normalizeObjectUnits(inputObject) {
+        var normalizedInput = {},
+            normalizedProp,
+            prop;
+
+        for (prop in inputObject) {
+            if (hasOwnProp(inputObject, prop)) {
+                normalizedProp = normalizeUnits(prop);
+                if (normalizedProp) {
+                    normalizedInput[normalizedProp] = inputObject[prop];
+                }
+            }
+        }
+
+        return normalizedInput;
+    }
+
+    var priorities = {};
+
+    function addUnitPriority(unit, priority) {
+        priorities[unit] = priority;
+    }
+
+    function getPrioritizedUnits(unitsObj) {
+        var units = [];
+        for (var u in unitsObj) {
+            units.push({unit: u, priority: priorities[u]});
+        }
+        units.sort(function (a, b) {
+            return a.priority - b.priority;
+        });
+        return units;
+    }
+
+    function makeGetSet (unit, keepTime) {
+        return function (value) {
+            if (value != null) {
+                get_set__set(this, unit, value);
+                utils_hooks__hooks.updateOffset(this, keepTime);
+                return this;
+            } else {
+                return get_set__get(this, unit);
+            }
+        };
+    }
+
+    function get_set__get (mom, unit) {
+        return mom.isValid() ?
+            mom._d['get' + (mom._isUTC ? 'UTC' : '') + unit]() : NaN;
+    }
+
+    function get_set__set (mom, unit, value) {
+        if (mom.isValid()) {
+            mom._d['set' + (mom._isUTC ? 'UTC' : '') + unit](value);
+        }
+    }
+
+    // MOMENTS
+
+    function stringGet (units) {
+        units = normalizeUnits(units);
+        if (isFunction(this[units])) {
+            return this[units]();
+        }
+        return this;
+    }
+
+
+    function stringSet (units, value) {
+        if (typeof units === 'object') {
+            units = normalizeObjectUnits(units);
+            var prioritized = getPrioritizedUnits(units);
+            for (var i = 0; i < prioritized.length; i++) {
+                this[prioritized[i].unit](units[prioritized[i].unit]);
+            }
+        } else {
+            units = normalizeUnits(units);
+            if (isFunction(this[units])) {
+                return this[units](value);
+            }
+        }
+        return this;
+    }
+
+    function zeroFill(number, targetLength, forceSign) {
+        var absNumber = '' + Math.abs(number),
+            zerosToFill = targetLength - absNumber.length,
+            sign = number >= 0;
+        return (sign ? (forceSign ? '+' : '') : '-') +
+            Math.pow(10, Math.max(0, zerosToFill)).toString().substr(1) + absNumber;
+    }
+
+    var formattingTokens = /(\[[^\[]*\])|(\\)?([Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Qo?|YYYYYY|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|kk?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)/g;
+
+    var localFormattingTokens = /(\[[^\[]*\])|(\\)?(LTS|LT|LL?L?L?|l{1,4})/g;
+
+    var formatFunctions = {};
+
+    var formatTokenFunctions = {};
+
+    // token:    'M'
+    // padded:   ['MM', 2]
+    // ordinal:  'Mo'
+    // callback: function () { this.month() + 1 }
+    function addFormatToken (token, padded, ordinal, callback) {
+        var func = callback;
+        if (typeof callback === 'string') {
+            func = function () {
+                return this[callback]();
+            };
+        }
+        if (token) {
+            formatTokenFunctions[token] = func;
+        }
+        if (padded) {
+            formatTokenFunctions[padded[0]] = function () {
+                return zeroFill(func.apply(this, arguments), padded[1], padded[2]);
+            };
+        }
+        if (ordinal) {
+            formatTokenFunctions[ordinal] = function () {
+                return this.localeData().ordinal(func.apply(this, arguments), token);
+            };
+        }
+    }
+
+    function removeFormattingTokens(input) {
+        if (input.match(/\[[\s\S]/)) {
+            return input.replace(/^\[|\]$/g, '');
+        }
+        return input.replace(/\\/g, '');
+    }
+
+    function makeFormatFunction(format) {
+        var array = format.match(formattingTokens), i, length;
+
+        for (i = 0, length = array.length; i < length; i++) {
+            if (formatTokenFunctions[array[i]]) {
+                array[i] = formatTokenFunctions[array[i]];
+            } else {
+                array[i] = removeFormattingTokens(array[i]);
+            }
+        }
+
+        return function (mom) {
+            var output = '', i;
+            for (i = 0; i < length; i++) {
+                output += array[i] instanceof Function ? array[i].call(mom, format) : array[i];
+            }
+            return output;
+        };
+    }
+
+    // format date using native date object
+    function formatMoment(m, format) {
+        if (!m.isValid()) {
+            return m.localeData().invalidDate();
+        }
+
+        format = expandFormat(format, m.localeData());
+        formatFunctions[format] = formatFunctions[format] || makeFormatFunction(format);
+
+        return formatFunctions[format](m);
+    }
+
+    function expandFormat(format, locale) {
+        var i = 5;
+
+        function replaceLongDateFormatTokens(input) {
+            return locale.longDateFormat(input) || input;
+        }
+
+        localFormattingTokens.lastIndex = 0;
+        while (i >= 0 && localFormattingTokens.test(format)) {
+            format = format.replace(localFormattingTokens, replaceLongDateFormatTokens);
+            localFormattingTokens.lastIndex = 0;
+            i -= 1;
+        }
+
+        return format;
+    }
+
+    var match1         = /\d/;            //       0 - 9
+    var match2         = /\d\d/;          //      00 - 99
+    var match3         = /\d{3}/;         //     000 - 999
+    var match4         = /\d{4}/;         //    0000 - 9999
+    var match6         = /[+-]?\d{6}/;    // -999999 - 999999
+    var match1to2      = /\d\d?/;         //       0 - 99
+    var match3to4      = /\d\d\d\d?/;     //     999 - 9999
+    var match5to6      = /\d\d\d\d\d\d?/; //   99999 - 999999
+    var match1to3      = /\d{1,3}/;       //       0 - 999
+    var match1to4      = /\d{1,4}/;       //       0 - 9999
+    var match1to6      = /[+-]?\d{1,6}/;  // -999999 - 999999
+
+    var matchUnsigned  = /\d+/;           //       0 - inf
+    var matchSigned    = /[+-]?\d+/;      //    -inf - inf
+
+    var matchOffset    = /Z|[+-]\d\d:?\d\d/gi; // +00:00 -00:00 +0000 -0000 or Z
+    var matchShortOffset = /Z|[+-]\d\d(?::?\d\d)?/gi; // +00 -00 +00:00 -00:00 +0000 -0000 or Z
+
+    var matchTimestamp = /[+-]?\d+(\.\d{1,3})?/; // 123456789 123456789.123
+
+    // any word (or two) characters or numbers including two/three word month in arabic.
+    // includes scottish gaelic two word and hyphenated months
+    var matchWord = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i;
+
+
+    var regexes = {};
+
+    function addRegexToken (token, regex, strictRegex) {
+        regexes[token] = isFunction(regex) ? regex : function (isStrict, localeData) {
+            return (isStrict && strictRegex) ? strictRegex : regex;
+        };
+    }
+
+    function getParseRegexForToken (token, config) {
+        if (!hasOwnProp(regexes, token)) {
+            return new RegExp(unescapeFormat(token));
+        }
+
+        return regexes[token](config._strict, config._locale);
+    }
+
+    // Code from http://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
+    function unescapeFormat(s) {
+        return regexEscape(s.replace('\\', '').replace(/\\(\[)|\\(\])|\[([^\]\[]*)\]|\\(.)/g, function (matched, p1, p2, p3, p4) {
+            return p1 || p2 || p3 || p4;
+        }));
+    }
+
+    function regexEscape(s) {
+        return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    }
+
+    var tokens = {};
+
+    function addParseToken (token, callback) {
+        var i, func = callback;
+        if (typeof token === 'string') {
+            token = [token];
+        }
+        if (typeof callback === 'number') {
+            func = function (input, array) {
+                array[callback] = toInt(input);
+            };
+        }
+        for (i = 0; i < token.length; i++) {
+            tokens[token[i]] = func;
+        }
+    }
+
+    function addWeekParseToken (token, callback) {
+        addParseToken(token, function (input, array, config, token) {
+            config._w = config._w || {};
+            callback(input, config._w, config, token);
+        });
+    }
+
+    function addTimeToArrayFromToken(token, input, config) {
+        if (input != null && hasOwnProp(tokens, token)) {
+            tokens[token](input, config._a, config, token);
+        }
+    }
+
+    var YEAR = 0;
+    var MONTH = 1;
+    var DATE = 2;
+    var HOUR = 3;
+    var MINUTE = 4;
+    var SECOND = 5;
+    var MILLISECOND = 6;
+    var WEEK = 7;
+    var WEEKDAY = 8;
+
+    var indexOf;
+
+    if (Array.prototype.indexOf) {
+        indexOf = Array.prototype.indexOf;
+    } else {
+        indexOf = function (o) {
+            // I know
+            var i;
+            for (i = 0; i < this.length; ++i) {
+                if (this[i] === o) {
+                    return i;
+                }
+            }
+            return -1;
+        };
+    }
+
+    function daysInMonth(year, month) {
+        return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    }
+
+    // FORMATTING
+
+    addFormatToken('M', ['MM', 2], 'Mo', function () {
+        return this.month() + 1;
+    });
+
+    addFormatToken('MMM', 0, 0, function (format) {
+        return this.localeData().monthsShort(this, format);
+    });
+
+    addFormatToken('MMMM', 0, 0, function (format) {
+        return this.localeData().months(this, format);
+    });
+
+    // ALIASES
+
+    addUnitAlias('month', 'M');
+
+    // PRIORITY
+
+    addUnitPriority('month', 8);
+
+    // PARSING
+
+    addRegexToken('M',    match1to2);
+    addRegexToken('MM',   match1to2, match2);
+    addRegexToken('MMM',  function (isStrict, locale) {
+        return locale.monthsShortRegex(isStrict);
+    });
+    addRegexToken('MMMM', function (isStrict, locale) {
+        return locale.monthsRegex(isStrict);
+    });
+
+    addParseToken(['M', 'MM'], function (input, array) {
+        array[MONTH] = toInt(input) - 1;
+    });
+
+    addParseToken(['MMM', 'MMMM'], function (input, array, config, token) {
+        var month = config._locale.monthsParse(input, token, config._strict);
+        // if we didn't find a month name, mark the date as invalid.
+        if (month != null) {
+            array[MONTH] = month;
+        } else {
+            getParsingFlags(config).invalidMonth = input;
+        }
+    });
+
+    // LOCALES
+
+    var MONTHS_IN_FORMAT = /D[oD]?(\[[^\[\]]*\]|\s+)+MMMM?/;
+    var defaultLocaleMonths = 'January_February_March_April_May_June_July_August_September_October_November_December'.split('_');
+    function localeMonths (m, format) {
+        if (!m) {
+            return this._months;
+        }
+        return isArray(this._months) ? this._months[m.month()] :
+            this._months[(this._months.isFormat || MONTHS_IN_FORMAT).test(format) ? 'format' : 'standalone'][m.month()];
+    }
+
+    var defaultLocaleMonthsShort = 'Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec'.split('_');
+    function localeMonthsShort (m, format) {
+        if (!m) {
+            return this._monthsShort;
+        }
+        return isArray(this._monthsShort) ? this._monthsShort[m.month()] :
+            this._monthsShort[MONTHS_IN_FORMAT.test(format) ? 'format' : 'standalone'][m.month()];
+    }
+
+    function units_month__handleStrictParse(monthName, format, strict) {
+        var i, ii, mom, llc = monthName.toLocaleLowerCase();
+        if (!this._monthsParse) {
+            // this is not used
+            this._monthsParse = [];
+            this._longMonthsParse = [];
+            this._shortMonthsParse = [];
+            for (i = 0; i < 12; ++i) {
+                mom = create_utc__createUTC([2000, i]);
+                this._shortMonthsParse[i] = this.monthsShort(mom, '').toLocaleLowerCase();
+                this._longMonthsParse[i] = this.months(mom, '').toLocaleLowerCase();
+            }
+        }
+
+        if (strict) {
+            if (format === 'MMM') {
+                ii = indexOf.call(this._shortMonthsParse, llc);
+                return ii !== -1 ? ii : null;
+            } else {
+                ii = indexOf.call(this._longMonthsParse, llc);
+                return ii !== -1 ? ii : null;
+            }
+        } else {
+            if (format === 'MMM') {
+                ii = indexOf.call(this._shortMonthsParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._longMonthsParse, llc);
+                return ii !== -1 ? ii : null;
+            } else {
+                ii = indexOf.call(this._longMonthsParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._shortMonthsParse, llc);
+                return ii !== -1 ? ii : null;
+            }
+        }
+    }
+
+    function localeMonthsParse (monthName, format, strict) {
+        var i, mom, regex;
+
+        if (this._monthsParseExact) {
+            return units_month__handleStrictParse.call(this, monthName, format, strict);
+        }
+
+        if (!this._monthsParse) {
+            this._monthsParse = [];
+            this._longMonthsParse = [];
+            this._shortMonthsParse = [];
+        }
+
+        // TODO: add sorting
+        // Sorting makes sure if one month (or abbr) is a prefix of another
+        // see sorting in computeMonthsParse
+        for (i = 0; i < 12; i++) {
+            // make the regex if we don't have it already
+            mom = create_utc__createUTC([2000, i]);
+            if (strict && !this._longMonthsParse[i]) {
+                this._longMonthsParse[i] = new RegExp('^' + this.months(mom, '').replace('.', '') + '$', 'i');
+                this._shortMonthsParse[i] = new RegExp('^' + this.monthsShort(mom, '').replace('.', '') + '$', 'i');
+            }
+            if (!strict && !this._monthsParse[i]) {
+                regex = '^' + this.months(mom, '') + '|^' + this.monthsShort(mom, '');
+                this._monthsParse[i] = new RegExp(regex.replace('.', ''), 'i');
+            }
+            // test the regex
+            if (strict && format === 'MMMM' && this._longMonthsParse[i].test(monthName)) {
+                return i;
+            } else if (strict && format === 'MMM' && this._shortMonthsParse[i].test(monthName)) {
+                return i;
+            } else if (!strict && this._monthsParse[i].test(monthName)) {
+                return i;
+            }
+        }
+    }
+
+    // MOMENTS
+
+    function setMonth (mom, value) {
+        var dayOfMonth;
+
+        if (!mom.isValid()) {
+            // No op
+            return mom;
+        }
+
+        if (typeof value === 'string') {
+            if (/^\d+$/.test(value)) {
+                value = toInt(value);
+            } else {
+                value = mom.localeData().monthsParse(value);
+                // TODO: Another silent failure?
+                if (typeof value !== 'number') {
+                    return mom;
+                }
+            }
+        }
+
+        dayOfMonth = Math.min(mom.date(), daysInMonth(mom.year(), value));
+        mom._d['set' + (mom._isUTC ? 'UTC' : '') + 'Month'](value, dayOfMonth);
+        return mom;
+    }
+
+    function getSetMonth (value) {
+        if (value != null) {
+            setMonth(this, value);
+            utils_hooks__hooks.updateOffset(this, true);
+            return this;
+        } else {
+            return get_set__get(this, 'Month');
+        }
+    }
+
+    function getDaysInMonth () {
+        return daysInMonth(this.year(), this.month());
+    }
+
+    var defaultMonthsShortRegex = matchWord;
+    function monthsShortRegex (isStrict) {
+        if (this._monthsParseExact) {
+            if (!hasOwnProp(this, '_monthsRegex')) {
+                computeMonthsParse.call(this);
+            }
+            if (isStrict) {
+                return this._monthsShortStrictRegex;
+            } else {
+                return this._monthsShortRegex;
+            }
+        } else {
+            if (!hasOwnProp(this, '_monthsShortRegex')) {
+                this._monthsShortRegex = defaultMonthsShortRegex;
+            }
+            return this._monthsShortStrictRegex && isStrict ?
+                this._monthsShortStrictRegex : this._monthsShortRegex;
+        }
+    }
+
+    var defaultMonthsRegex = matchWord;
+    function monthsRegex (isStrict) {
+        if (this._monthsParseExact) {
+            if (!hasOwnProp(this, '_monthsRegex')) {
+                computeMonthsParse.call(this);
+            }
+            if (isStrict) {
+                return this._monthsStrictRegex;
+            } else {
+                return this._monthsRegex;
+            }
+        } else {
+            if (!hasOwnProp(this, '_monthsRegex')) {
+                this._monthsRegex = defaultMonthsRegex;
+            }
+            return this._monthsStrictRegex && isStrict ?
+                this._monthsStrictRegex : this._monthsRegex;
+        }
+    }
+
+    function computeMonthsParse () {
+        function cmpLenRev(a, b) {
+            return b.length - a.length;
+        }
+
+        var shortPieces = [], longPieces = [], mixedPieces = [],
+            i, mom;
+        for (i = 0; i < 12; i++) {
+            // make the regex if we don't have it already
+            mom = create_utc__createUTC([2000, i]);
+            shortPieces.push(this.monthsShort(mom, ''));
+            longPieces.push(this.months(mom, ''));
+            mixedPieces.push(this.months(mom, ''));
+            mixedPieces.push(this.monthsShort(mom, ''));
+        }
+        // Sorting makes sure if one month (or abbr) is a prefix of another it
+        // will match the longer piece.
+        shortPieces.sort(cmpLenRev);
+        longPieces.sort(cmpLenRev);
+        mixedPieces.sort(cmpLenRev);
+        for (i = 0; i < 12; i++) {
+            shortPieces[i] = regexEscape(shortPieces[i]);
+            longPieces[i] = regexEscape(longPieces[i]);
+        }
+        for (i = 0; i < 24; i++) {
+            mixedPieces[i] = regexEscape(mixedPieces[i]);
+        }
+
+        this._monthsRegex = new RegExp('^(' + mixedPieces.join('|') + ')', 'i');
+        this._monthsShortRegex = this._monthsRegex;
+        this._monthsStrictRegex = new RegExp('^(' + longPieces.join('|') + ')', 'i');
+        this._monthsShortStrictRegex = new RegExp('^(' + shortPieces.join('|') + ')', 'i');
+    }
+
+    // FORMATTING
+
+    addFormatToken('Y', 0, 0, function () {
+        var y = this.year();
+        return y <= 9999 ? '' + y : '+' + y;
+    });
+
+    addFormatToken(0, ['YY', 2], 0, function () {
+        return this.year() % 100;
+    });
+
+    addFormatToken(0, ['YYYY',   4],       0, 'year');
+    addFormatToken(0, ['YYYYY',  5],       0, 'year');
+    addFormatToken(0, ['YYYYYY', 6, true], 0, 'year');
+
+    // ALIASES
+
+    addUnitAlias('year', 'y');
+
+    // PRIORITIES
+
+    addUnitPriority('year', 1);
+
+    // PARSING
+
+    addRegexToken('Y',      matchSigned);
+    addRegexToken('YY',     match1to2, match2);
+    addRegexToken('YYYY',   match1to4, match4);
+    addRegexToken('YYYYY',  match1to6, match6);
+    addRegexToken('YYYYYY', match1to6, match6);
+
+    addParseToken(['YYYYY', 'YYYYYY'], YEAR);
+    addParseToken('YYYY', function (input, array) {
+        array[YEAR] = input.length === 2 ? utils_hooks__hooks.parseTwoDigitYear(input) : toInt(input);
+    });
+    addParseToken('YY', function (input, array) {
+        array[YEAR] = utils_hooks__hooks.parseTwoDigitYear(input);
+    });
+    addParseToken('Y', function (input, array) {
+        array[YEAR] = parseInt(input, 10);
+    });
+
+    // HELPERS
+
+    function daysInYear(year) {
+        return isLeapYear(year) ? 366 : 365;
+    }
+
+    function isLeapYear(year) {
+        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    }
+
+    // HOOKS
+
+    utils_hooks__hooks.parseTwoDigitYear = function (input) {
+        return toInt(input) + (toInt(input) > 68 ? 1900 : 2000);
+    };
+
+    // MOMENTS
+
+    var getSetYear = makeGetSet('FullYear', true);
+
+    function getIsLeapYear () {
+        return isLeapYear(this.year());
+    }
+
+    function createDate (y, m, d, h, M, s, ms) {
+        //can't just apply() to create a date:
+        //http://stackoverflow.com/questions/181348/instantiating-a-javascript-object-by-calling-prototype-constructor-apply
+        var date = new Date(y, m, d, h, M, s, ms);
+
+        //the date constructor remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0 && isFinite(date.getFullYear())) {
+            date.setFullYear(y);
+        }
+        return date;
+    }
+
+    function createUTCDate (y) {
+        var date = new Date(Date.UTC.apply(null, arguments));
+
+        //the Date.UTC function remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0 && isFinite(date.getUTCFullYear())) {
+            date.setUTCFullYear(y);
+        }
+        return date;
+    }
+
+    // start-of-first-week - start-of-year
+    function firstWeekOffset(year, dow, doy) {
+        var // first-week day -- which january is always in the first week (4 for iso, 1 for other)
+            fwd = 7 + dow - doy,
+            // first-week day local weekday -- which local weekday is fwd
+            fwdlw = (7 + createUTCDate(year, 0, fwd).getUTCDay() - dow) % 7;
+
+        return -fwdlw + fwd - 1;
+    }
+
+    //http://en.wikipedia.org/wiki/ISO_week_date#Calculating_a_date_given_the_year.2C_week_number_and_weekday
+    function dayOfYearFromWeeks(year, week, weekday, dow, doy) {
+        var localWeekday = (7 + weekday - dow) % 7,
+            weekOffset = firstWeekOffset(year, dow, doy),
+            dayOfYear = 1 + 7 * (week - 1) + localWeekday + weekOffset,
+            resYear, resDayOfYear;
+
+        if (dayOfYear <= 0) {
+            resYear = year - 1;
+            resDayOfYear = daysInYear(resYear) + dayOfYear;
+        } else if (dayOfYear > daysInYear(year)) {
+            resYear = year + 1;
+            resDayOfYear = dayOfYear - daysInYear(year);
+        } else {
+            resYear = year;
+            resDayOfYear = dayOfYear;
+        }
+
+        return {
+            year: resYear,
+            dayOfYear: resDayOfYear
+        };
+    }
+
+    function weekOfYear(mom, dow, doy) {
+        var weekOffset = firstWeekOffset(mom.year(), dow, doy),
+            week = Math.floor((mom.dayOfYear() - weekOffset - 1) / 7) + 1,
+            resWeek, resYear;
+
+        if (week < 1) {
+            resYear = mom.year() - 1;
+            resWeek = week + weeksInYear(resYear, dow, doy);
+        } else if (week > weeksInYear(mom.year(), dow, doy)) {
+            resWeek = week - weeksInYear(mom.year(), dow, doy);
+            resYear = mom.year() + 1;
+        } else {
+            resYear = mom.year();
+            resWeek = week;
+        }
+
+        return {
+            week: resWeek,
+            year: resYear
+        };
+    }
+
+    function weeksInYear(year, dow, doy) {
+        var weekOffset = firstWeekOffset(year, dow, doy),
+            weekOffsetNext = firstWeekOffset(year + 1, dow, doy);
+        return (daysInYear(year) - weekOffset + weekOffsetNext) / 7;
+    }
+
+    // FORMATTING
+
+    addFormatToken('w', ['ww', 2], 'wo', 'week');
+    addFormatToken('W', ['WW', 2], 'Wo', 'isoWeek');
+
+    // ALIASES
+
+    addUnitAlias('week', 'w');
+    addUnitAlias('isoWeek', 'W');
+
+    // PRIORITIES
+
+    addUnitPriority('week', 5);
+    addUnitPriority('isoWeek', 5);
+
+    // PARSING
+
+    addRegexToken('w',  match1to2);
+    addRegexToken('ww', match1to2, match2);
+    addRegexToken('W',  match1to2);
+    addRegexToken('WW', match1to2, match2);
+
+    addWeekParseToken(['w', 'ww', 'W', 'WW'], function (input, week, config, token) {
+        week[token.substr(0, 1)] = toInt(input);
+    });
+
+    // HELPERS
+
+    // LOCALES
+
+    function localeWeek (mom) {
+        return weekOfYear(mom, this._week.dow, this._week.doy).week;
+    }
+
+    var defaultLocaleWeek = {
+        dow : 0, // Sunday is the first day of the week.
+        doy : 6  // The week that contains Jan 1st is the first week of the year.
+    };
+
+    function localeFirstDayOfWeek () {
+        return this._week.dow;
+    }
+
+    function localeFirstDayOfYear () {
+        return this._week.doy;
+    }
+
+    // MOMENTS
+
+    function getSetWeek (input) {
+        var week = this.localeData().week(this);
+        return input == null ? week : this.add((input - week) * 7, 'd');
+    }
+
+    function getSetISOWeek (input) {
+        var week = weekOfYear(this, 1, 4).week;
+        return input == null ? week : this.add((input - week) * 7, 'd');
+    }
+
+    // FORMATTING
+
+    addFormatToken('d', 0, 'do', 'day');
+
+    addFormatToken('dd', 0, 0, function (format) {
+        return this.localeData().weekdaysMin(this, format);
+    });
+
+    addFormatToken('ddd', 0, 0, function (format) {
+        return this.localeData().weekdaysShort(this, format);
+    });
+
+    addFormatToken('dddd', 0, 0, function (format) {
+        return this.localeData().weekdays(this, format);
+    });
+
+    addFormatToken('e', 0, 0, 'weekday');
+    addFormatToken('E', 0, 0, 'isoWeekday');
+
+    // ALIASES
+
+    addUnitAlias('day', 'd');
+    addUnitAlias('weekday', 'e');
+    addUnitAlias('isoWeekday', 'E');
+
+    // PRIORITY
+    addUnitPriority('day', 11);
+    addUnitPriority('weekday', 11);
+    addUnitPriority('isoWeekday', 11);
+
+    // PARSING
+
+    addRegexToken('d',    match1to2);
+    addRegexToken('e',    match1to2);
+    addRegexToken('E',    match1to2);
+    addRegexToken('dd',   function (isStrict, locale) {
+        return locale.weekdaysMinRegex(isStrict);
+    });
+    addRegexToken('ddd',   function (isStrict, locale) {
+        return locale.weekdaysShortRegex(isStrict);
+    });
+    addRegexToken('dddd',   function (isStrict, locale) {
+        return locale.weekdaysRegex(isStrict);
+    });
+
+    addWeekParseToken(['dd', 'ddd', 'dddd'], function (input, week, config, token) {
+        var weekday = config._locale.weekdaysParse(input, token, config._strict);
+        // if we didn't get a weekday name, mark the date as invalid
+        if (weekday != null) {
+            week.d = weekday;
+        } else {
+            getParsingFlags(config).invalidWeekday = input;
+        }
+    });
+
+    addWeekParseToken(['d', 'e', 'E'], function (input, week, config, token) {
+        week[token] = toInt(input);
+    });
+
+    // HELPERS
+
+    function parseWeekday(input, locale) {
+        if (typeof input !== 'string') {
+            return input;
+        }
+
+        if (!isNaN(input)) {
+            return parseInt(input, 10);
+        }
+
+        input = locale.weekdaysParse(input);
+        if (typeof input === 'number') {
+            return input;
+        }
+
+        return null;
+    }
+
+    function parseIsoWeekday(input, locale) {
+        if (typeof input === 'string') {
+            return locale.weekdaysParse(input) % 7 || 7;
+        }
+        return isNaN(input) ? null : input;
+    }
+
+    // LOCALES
+
+    var defaultLocaleWeekdays = 'Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday'.split('_');
+    function localeWeekdays (m, format) {
+        if (!m) {
+            return this._weekdays;
+        }
+        return isArray(this._weekdays) ? this._weekdays[m.day()] :
+            this._weekdays[this._weekdays.isFormat.test(format) ? 'format' : 'standalone'][m.day()];
+    }
+
+    var defaultLocaleWeekdaysShort = 'Sun_Mon_Tue_Wed_Thu_Fri_Sat'.split('_');
+    function localeWeekdaysShort (m) {
+        return (m) ? this._weekdaysShort[m.day()] : this._weekdaysShort;
+    }
+
+    var defaultLocaleWeekdaysMin = 'Su_Mo_Tu_We_Th_Fr_Sa'.split('_');
+    function localeWeekdaysMin (m) {
+        return (m) ? this._weekdaysMin[m.day()] : this._weekdaysMin;
+    }
+
+    function day_of_week__handleStrictParse(weekdayName, format, strict) {
+        var i, ii, mom, llc = weekdayName.toLocaleLowerCase();
+        if (!this._weekdaysParse) {
+            this._weekdaysParse = [];
+            this._shortWeekdaysParse = [];
+            this._minWeekdaysParse = [];
+
+            for (i = 0; i < 7; ++i) {
+                mom = create_utc__createUTC([2000, 1]).day(i);
+                this._minWeekdaysParse[i] = this.weekdaysMin(mom, '').toLocaleLowerCase();
+                this._shortWeekdaysParse[i] = this.weekdaysShort(mom, '').toLocaleLowerCase();
+                this._weekdaysParse[i] = this.weekdays(mom, '').toLocaleLowerCase();
+            }
+        }
+
+        if (strict) {
+            if (format === 'dddd') {
+                ii = indexOf.call(this._weekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            } else if (format === 'ddd') {
+                ii = indexOf.call(this._shortWeekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            } else {
+                ii = indexOf.call(this._minWeekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            }
+        } else {
+            if (format === 'dddd') {
+                ii = indexOf.call(this._weekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._shortWeekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._minWeekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            } else if (format === 'ddd') {
+                ii = indexOf.call(this._shortWeekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._weekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._minWeekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            } else {
+                ii = indexOf.call(this._minWeekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._weekdaysParse, llc);
+                if (ii !== -1) {
+                    return ii;
+                }
+                ii = indexOf.call(this._shortWeekdaysParse, llc);
+                return ii !== -1 ? ii : null;
+            }
+        }
+    }
+
+    function localeWeekdaysParse (weekdayName, format, strict) {
+        var i, mom, regex;
+
+        if (this._weekdaysParseExact) {
+            return day_of_week__handleStrictParse.call(this, weekdayName, format, strict);
+        }
+
+        if (!this._weekdaysParse) {
+            this._weekdaysParse = [];
+            this._minWeekdaysParse = [];
+            this._shortWeekdaysParse = [];
+            this._fullWeekdaysParse = [];
+        }
+
+        for (i = 0; i < 7; i++) {
+            // make the regex if we don't have it already
+
+            mom = create_utc__createUTC([2000, 1]).day(i);
+            if (strict && !this._fullWeekdaysParse[i]) {
+                this._fullWeekdaysParse[i] = new RegExp('^' + this.weekdays(mom, '').replace('.', '\.?') + '$', 'i');
+                this._shortWeekdaysParse[i] = new RegExp('^' + this.weekdaysShort(mom, '').replace('.', '\.?') + '$', 'i');
+                this._minWeekdaysParse[i] = new RegExp('^' + this.weekdaysMin(mom, '').replace('.', '\.?') + '$', 'i');
+            }
+            if (!this._weekdaysParse[i]) {
+                regex = '^' + this.weekdays(mom, '') + '|^' + this.weekdaysShort(mom, '') + '|^' + this.weekdaysMin(mom, '');
+                this._weekdaysParse[i] = new RegExp(regex.replace('.', ''), 'i');
+            }
+            // test the regex
+            if (strict && format === 'dddd' && this._fullWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (strict && format === 'ddd' && this._shortWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (strict && format === 'dd' && this._minWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (!strict && this._weekdaysParse[i].test(weekdayName)) {
+                return i;
+            }
+        }
+    }
+
+    // MOMENTS
+
+    function getSetDayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
+        var day = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
+        if (input != null) {
+            input = parseWeekday(input, this.localeData());
+            return this.add(input - day, 'd');
+        } else {
+            return day;
+        }
+    }
+
+    function getSetLocaleDayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
+        var weekday = (this.day() + 7 - this.localeData()._week.dow) % 7;
+        return input == null ? weekday : this.add(input - weekday, 'd');
+    }
+
+    function getSetISODayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
+
+        // behaves the same as moment#day except
+        // as a getter, returns 7 instead of 0 (1-7 range instead of 0-6)
+        // as a setter, sunday should belong to the previous week.
+
+        if (input != null) {
+            var weekday = parseIsoWeekday(input, this.localeData());
+            return this.day(this.day() % 7 ? weekday : weekday - 7);
+        } else {
+            return this.day() || 7;
+        }
+    }
+
+    var defaultWeekdaysRegex = matchWord;
+    function weekdaysRegex (isStrict) {
+        if (this._weekdaysParseExact) {
+            if (!hasOwnProp(this, '_weekdaysRegex')) {
+                computeWeekdaysParse.call(this);
+            }
+            if (isStrict) {
+                return this._weekdaysStrictRegex;
+            } else {
+                return this._weekdaysRegex;
+            }
+        } else {
+            if (!hasOwnProp(this, '_weekdaysRegex')) {
+                this._weekdaysRegex = defaultWeekdaysRegex;
+            }
+            return this._weekdaysStrictRegex && isStrict ?
+                this._weekdaysStrictRegex : this._weekdaysRegex;
+        }
+    }
+
+    var defaultWeekdaysShortRegex = matchWord;
+    function weekdaysShortRegex (isStrict) {
+        if (this._weekdaysParseExact) {
+            if (!hasOwnProp(this, '_weekdaysRegex')) {
+                computeWeekdaysParse.call(this);
+            }
+            if (isStrict) {
+                return this._weekdaysShortStrictRegex;
+            } else {
+                return this._weekdaysShortRegex;
+            }
+        } else {
+            if (!hasOwnProp(this, '_weekdaysShortRegex')) {
+                this._weekdaysShortRegex = defaultWeekdaysShortRegex;
+            }
+            return this._weekdaysShortStrictRegex && isStrict ?
+                this._weekdaysShortStrictRegex : this._weekdaysShortRegex;
+        }
+    }
+
+    var defaultWeekdaysMinRegex = matchWord;
+    function weekdaysMinRegex (isStrict) {
+        if (this._weekdaysParseExact) {
+            if (!hasOwnProp(this, '_weekdaysRegex')) {
+                computeWeekdaysParse.call(this);
+            }
+            if (isStrict) {
+                return this._weekdaysMinStrictRegex;
+            } else {
+                return this._weekdaysMinRegex;
+            }
+        } else {
+            if (!hasOwnProp(this, '_weekdaysMinRegex')) {
+                this._weekdaysMinRegex = defaultWeekdaysMinRegex;
+            }
+            return this._weekdaysMinStrictRegex && isStrict ?
+                this._weekdaysMinStrictRegex : this._weekdaysMinRegex;
+        }
+    }
+
+
+    function computeWeekdaysParse () {
+        function cmpLenRev(a, b) {
+            return b.length - a.length;
+        }
+
+        var minPieces = [], shortPieces = [], longPieces = [], mixedPieces = [],
+            i, mom, minp, shortp, longp;
+        for (i = 0; i < 7; i++) {
+            // make the regex if we don't have it already
+            mom = create_utc__createUTC([2000, 1]).day(i);
+            minp = this.weekdaysMin(mom, '');
+            shortp = this.weekdaysShort(mom, '');
+            longp = this.weekdays(mom, '');
+            minPieces.push(minp);
+            shortPieces.push(shortp);
+            longPieces.push(longp);
+            mixedPieces.push(minp);
+            mixedPieces.push(shortp);
+            mixedPieces.push(longp);
+        }
+        // Sorting makes sure if one weekday (or abbr) is a prefix of another it
+        // will match the longer piece.
+        minPieces.sort(cmpLenRev);
+        shortPieces.sort(cmpLenRev);
+        longPieces.sort(cmpLenRev);
+        mixedPieces.sort(cmpLenRev);
+        for (i = 0; i < 7; i++) {
+            shortPieces[i] = regexEscape(shortPieces[i]);
+            longPieces[i] = regexEscape(longPieces[i]);
+            mixedPieces[i] = regexEscape(mixedPieces[i]);
+        }
+
+        this._weekdaysRegex = new RegExp('^(' + mixedPieces.join('|') + ')', 'i');
+        this._weekdaysShortRegex = this._weekdaysRegex;
+        this._weekdaysMinRegex = this._weekdaysRegex;
+
+        this._weekdaysStrictRegex = new RegExp('^(' + longPieces.join('|') + ')', 'i');
+        this._weekdaysShortStrictRegex = new RegExp('^(' + shortPieces.join('|') + ')', 'i');
+        this._weekdaysMinStrictRegex = new RegExp('^(' + minPieces.join('|') + ')', 'i');
+    }
+
+    // FORMATTING
+
+    function hFormat() {
+        return this.hours() % 12 || 12;
+    }
+
+    function kFormat() {
+        return this.hours() || 24;
+    }
+
+    addFormatToken('H', ['HH', 2], 0, 'hour');
+    addFormatToken('h', ['hh', 2], 0, hFormat);
+    addFormatToken('k', ['kk', 2], 0, kFormat);
+
+    addFormatToken('hmm', 0, 0, function () {
+        return '' + hFormat.apply(this) + zeroFill(this.minutes(), 2);
+    });
+
+    addFormatToken('hmmss', 0, 0, function () {
+        return '' + hFormat.apply(this) + zeroFill(this.minutes(), 2) +
+            zeroFill(this.seconds(), 2);
+    });
+
+    addFormatToken('Hmm', 0, 0, function () {
+        return '' + this.hours() + zeroFill(this.minutes(), 2);
+    });
+
+    addFormatToken('Hmmss', 0, 0, function () {
+        return '' + this.hours() + zeroFill(this.minutes(), 2) +
+            zeroFill(this.seconds(), 2);
+    });
+
+    function meridiem (token, lowercase) {
+        addFormatToken(token, 0, 0, function () {
+            return this.localeData().meridiem(this.hours(), this.minutes(), lowercase);
+        });
+    }
+
+    meridiem('a', true);
+    meridiem('A', false);
+
+    // ALIASES
+
+    addUnitAlias('hour', 'h');
+
+    // PRIORITY
+    addUnitPriority('hour', 13);
+
+    // PARSING
+
+    function matchMeridiem (isStrict, locale) {
+        return locale._meridiemParse;
+    }
+
+    addRegexToken('a',  matchMeridiem);
+    addRegexToken('A',  matchMeridiem);
+    addRegexToken('H',  match1to2);
+    addRegexToken('h',  match1to2);
+    addRegexToken('HH', match1to2, match2);
+    addRegexToken('hh', match1to2, match2);
+
+    addRegexToken('hmm', match3to4);
+    addRegexToken('hmmss', match5to6);
+    addRegexToken('Hmm', match3to4);
+    addRegexToken('Hmmss', match5to6);
+
+    addParseToken(['H', 'HH'], HOUR);
+    addParseToken(['a', 'A'], function (input, array, config) {
+        config._isPm = config._locale.isPM(input);
+        config._meridiem = input;
+    });
+    addParseToken(['h', 'hh'], function (input, array, config) {
+        array[HOUR] = toInt(input);
+        getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('hmm', function (input, array, config) {
+        var pos = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos));
+        array[MINUTE] = toInt(input.substr(pos));
+        getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('hmmss', function (input, array, config) {
+        var pos1 = input.length - 4;
+        var pos2 = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos1));
+        array[MINUTE] = toInt(input.substr(pos1, 2));
+        array[SECOND] = toInt(input.substr(pos2));
+        getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('Hmm', function (input, array, config) {
+        var pos = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos));
+        array[MINUTE] = toInt(input.substr(pos));
+    });
+    addParseToken('Hmmss', function (input, array, config) {
+        var pos1 = input.length - 4;
+        var pos2 = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos1));
+        array[MINUTE] = toInt(input.substr(pos1, 2));
+        array[SECOND] = toInt(input.substr(pos2));
+    });
+
+    // LOCALES
+
+    function localeIsPM (input) {
+        // IE8 Quirks Mode & IE7 Standards Mode do not allow accessing strings like arrays
+        // Using charAt should be more compatible.
+        return ((input + '').toLowerCase().charAt(0) === 'p');
+    }
+
+    var defaultLocaleMeridiemParse = /[ap]\.?m?\.?/i;
+    function localeMeridiem (hours, minutes, isLower) {
+        if (hours > 11) {
+            return isLower ? 'pm' : 'PM';
+        } else {
+            return isLower ? 'am' : 'AM';
+        }
+    }
+
+
+    // MOMENTS
+
+    // Setting the hour should keep the time, because the user explicitly
+    // specified which hour he wants. So trying to maintain the same hour (in
+    // a new timezone) makes sense. Adding/subtracting hours does not follow
+    // this rule.
+    var getSetHour = makeGetSet('Hours', true);
+
+    var baseConfig = {
+        calendar: defaultCalendar,
+        longDateFormat: defaultLongDateFormat,
+        invalidDate: defaultInvalidDate,
+        ordinal: defaultOrdinal,
+        ordinalParse: defaultOrdinalParse,
+        relativeTime: defaultRelativeTime,
+
+        months: defaultLocaleMonths,
+        monthsShort: defaultLocaleMonthsShort,
+
+        week: defaultLocaleWeek,
+
+        weekdays: defaultLocaleWeekdays,
+        weekdaysMin: defaultLocaleWeekdaysMin,
+        weekdaysShort: defaultLocaleWeekdaysShort,
+
+        meridiemParse: defaultLocaleMeridiemParse
+    };
+
+    // internal storage for locale config files
+    var locales = {};
+    var globalLocale;
+
+    function normalizeLocale(key) {
+        return key ? key.toLowerCase().replace('_', '-') : key;
+    }
+
+    // pick the locale from the array
+    // try ['en-au', 'en-gb'] as 'en-au', 'en-gb', 'en', as in move through the list trying each
+    // substring from most specific to least, but move to the next array item if it's a more specific variant than the current root
+    function chooseLocale(names) {
+        var i = 0, j, next, locale, split;
+
+        while (i < names.length) {
+            split = normalizeLocale(names[i]).split('-');
+            j = split.length;
+            next = normalizeLocale(names[i + 1]);
+            next = next ? next.split('-') : null;
+            while (j > 0) {
+                locale = loadLocale(split.slice(0, j).join('-'));
+                if (locale) {
+                    return locale;
+                }
+                if (next && next.length >= j && compareArrays(split, next, true) >= j - 1) {
+                    //the next array item is better than a shallower substring of this one
+                    break;
+                }
+                j--;
+            }
+            i++;
+        }
+        return null;
+    }
+
+    function loadLocale(name) {
+        var oldLocale = null;
+        // TODO: Find a better way to register and load all the locales in Node
+        if (!locales[name] && (typeof module !== 'undefined') &&
+                module && module.exports) {
+            try {
+                oldLocale = globalLocale._abbr;
+                require('./locale/' + name);
+                // because defineLocale currently also sets the global locale, we
+                // want to undo that for lazy loaded locales
+                locale_locales__getSetGlobalLocale(oldLocale);
+            } catch (e) { }
+        }
+        return locales[name];
+    }
+
+    // This function will load locale and then set the global locale.  If
+    // no arguments are passed in, it will simply return the current global
+    // locale key.
+    function locale_locales__getSetGlobalLocale (key, values) {
+        var data;
+        if (key) {
+            if (isUndefined(values)) {
+                data = locale_locales__getLocale(key);
+            }
+            else {
+                data = defineLocale(key, values);
+            }
+
+            if (data) {
+                // moment.duration._locale = moment._locale = data;
+                globalLocale = data;
+            }
+        }
+
+        return globalLocale._abbr;
+    }
+
+    function defineLocale (name, config) {
+        if (config !== null) {
+            var parentConfig = baseConfig;
+            config.abbr = name;
+            if (locales[name] != null) {
+                deprecateSimple('defineLocaleOverride',
+                        'use moment.updateLocale(localeName, config) to change ' +
+                        'an existing locale. moment.defineLocale(localeName, ' +
+                        'config) should only be used for creating a new locale ' +
+                        'See http://momentjs.com/guides/#/warnings/define-locale/ for more info.');
+                parentConfig = locales[name]._config;
+            } else if (config.parentLocale != null) {
+                if (locales[config.parentLocale] != null) {
+                    parentConfig = locales[config.parentLocale]._config;
+                } else {
+                    // treat as if there is no base config
+                    deprecateSimple('parentLocaleUndefined',
+                            'specified parentLocale is not defined yet. See http://momentjs.com/guides/#/warnings/parent-locale/');
+                }
+            }
+            locales[name] = new Locale(mergeConfigs(parentConfig, config));
+
+            // backwards compat for now: also set the locale
+            locale_locales__getSetGlobalLocale(name);
+
+            return locales[name];
+        } else {
+            // useful for testing
+            delete locales[name];
+            return null;
+        }
+    }
+
+    function updateLocale(name, config) {
+        if (config != null) {
+            var locale, parentConfig = baseConfig;
+            // MERGE
+            if (locales[name] != null) {
+                parentConfig = locales[name]._config;
+            }
+            config = mergeConfigs(parentConfig, config);
+            locale = new Locale(config);
+            locale.parentLocale = locales[name];
+            locales[name] = locale;
+
+            // backwards compat for now: also set the locale
+            locale_locales__getSetGlobalLocale(name);
+        } else {
+            // pass null for config to unupdate, useful for tests
+            if (locales[name] != null) {
+                if (locales[name].parentLocale != null) {
+                    locales[name] = locales[name].parentLocale;
+                } else if (locales[name] != null) {
+                    delete locales[name];
+                }
+            }
+        }
+        return locales[name];
+    }
+
+    // returns locale data
+    function locale_locales__getLocale (key) {
+        var locale;
+
+        if (key && key._locale && key._locale._abbr) {
+            key = key._locale._abbr;
+        }
+
+        if (!key) {
+            return globalLocale;
+        }
+
+        if (!isArray(key)) {
+            //short-circuit everything else
+            locale = loadLocale(key);
+            if (locale) {
+                return locale;
+            }
+            key = [key];
+        }
+
+        return chooseLocale(key);
+    }
+
+    function locale_locales__listLocales() {
+        return keys(locales);
+    }
+
+    function checkOverflow (m) {
+        var overflow;
+        var a = m._a;
+
+        if (a && getParsingFlags(m).overflow === -2) {
+            overflow =
+                a[MONTH]       < 0 || a[MONTH]       > 11  ? MONTH :
+                a[DATE]        < 1 || a[DATE]        > daysInMonth(a[YEAR], a[MONTH]) ? DATE :
+                a[HOUR]        < 0 || a[HOUR]        > 24 || (a[HOUR] === 24 && (a[MINUTE] !== 0 || a[SECOND] !== 0 || a[MILLISECOND] !== 0)) ? HOUR :
+                a[MINUTE]      < 0 || a[MINUTE]      > 59  ? MINUTE :
+                a[SECOND]      < 0 || a[SECOND]      > 59  ? SECOND :
+                a[MILLISECOND] < 0 || a[MILLISECOND] > 999 ? MILLISECOND :
+                -1;
+
+            if (getParsingFlags(m)._overflowDayOfYear && (overflow < YEAR || overflow > DATE)) {
+                overflow = DATE;
+            }
+            if (getParsingFlags(m)._overflowWeeks && overflow === -1) {
+                overflow = WEEK;
+            }
+            if (getParsingFlags(m)._overflowWeekday && overflow === -1) {
+                overflow = WEEKDAY;
+            }
+
+            getParsingFlags(m).overflow = overflow;
+        }
+
+        return m;
+    }
+
+    // iso 8601 regex
+    // 0000-00-00 0000-W00 or 0000-W00-0 + T + 00 or 00:00 or 00:00:00 or 00:00:00.000 + +00:00 or +0000 or +00)
+    var extendedIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})-(?:\d\d-\d\d|W\d\d-\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?::\d\d(?::\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/;
+    var basicIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})(?:\d\d\d\d|W\d\d\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?:\d\d(?:\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/;
+
+    var tzRegex = /Z|[+-]\d\d(?::?\d\d)?/;
+
+    var isoDates = [
+        ['YYYYYY-MM-DD', /[+-]\d{6}-\d\d-\d\d/],
+        ['YYYY-MM-DD', /\d{4}-\d\d-\d\d/],
+        ['GGGG-[W]WW-E', /\d{4}-W\d\d-\d/],
+        ['GGGG-[W]WW', /\d{4}-W\d\d/, false],
+        ['YYYY-DDD', /\d{4}-\d{3}/],
+        ['YYYY-MM', /\d{4}-\d\d/, false],
+        ['YYYYYYMMDD', /[+-]\d{10}/],
+        ['YYYYMMDD', /\d{8}/],
+        // YYYYMM is NOT allowed by the standard
+        ['GGGG[W]WWE', /\d{4}W\d{3}/],
+        ['GGGG[W]WW', /\d{4}W\d{2}/, false],
+        ['YYYYDDD', /\d{7}/]
+    ];
+
+    // iso time formats and regexes
+    var isoTimes = [
+        ['HH:mm:ss.SSSS', /\d\d:\d\d:\d\d\.\d+/],
+        ['HH:mm:ss,SSSS', /\d\d:\d\d:\d\d,\d+/],
+        ['HH:mm:ss', /\d\d:\d\d:\d\d/],
+        ['HH:mm', /\d\d:\d\d/],
+        ['HHmmss.SSSS', /\d\d\d\d\d\d\.\d+/],
+        ['HHmmss,SSSS', /\d\d\d\d\d\d,\d+/],
+        ['HHmmss', /\d\d\d\d\d\d/],
+        ['HHmm', /\d\d\d\d/],
+        ['HH', /\d\d/]
+    ];
+
+    var aspNetJsonRegex = /^\/?Date\((\-?\d+)/i;
+
+    // date from iso format
+    function configFromISO(config) {
+        var i, l,
+            string = config._i,
+            match = extendedIsoRegex.exec(string) || basicIsoRegex.exec(string),
+            allowTime, dateFormat, timeFormat, tzFormat;
+
+        if (match) {
+            getParsingFlags(config).iso = true;
+
+            for (i = 0, l = isoDates.length; i < l; i++) {
+                if (isoDates[i][1].exec(match[1])) {
+                    dateFormat = isoDates[i][0];
+                    allowTime = isoDates[i][2] !== false;
+                    break;
+                }
+            }
+            if (dateFormat == null) {
+                config._isValid = false;
+                return;
+            }
+            if (match[3]) {
+                for (i = 0, l = isoTimes.length; i < l; i++) {
+                    if (isoTimes[i][1].exec(match[3])) {
+                        // match[2] should be 'T' or space
+                        timeFormat = (match[2] || ' ') + isoTimes[i][0];
+                        break;
+                    }
+                }
+                if (timeFormat == null) {
+                    config._isValid = false;
+                    return;
+                }
+            }
+            if (!allowTime && timeFormat != null) {
+                config._isValid = false;
+                return;
+            }
+            if (match[4]) {
+                if (tzRegex.exec(match[4])) {
+                    tzFormat = 'Z';
+                } else {
+                    config._isValid = false;
+                    return;
+                }
+            }
+            config._f = dateFormat + (timeFormat || '') + (tzFormat || '');
+            configFromStringAndFormat(config);
+        } else {
+            config._isValid = false;
+        }
+    }
+
+    // date from iso format or fallback
+    function configFromString(config) {
+        var matched = aspNetJsonRegex.exec(config._i);
+
+        if (matched !== null) {
+            config._d = new Date(+matched[1]);
+            return;
+        }
+
+        configFromISO(config);
+        if (config._isValid === false) {
+            delete config._isValid;
+            utils_hooks__hooks.createFromInputFallback(config);
+        }
+    }
+
+    utils_hooks__hooks.createFromInputFallback = deprecate(
+        'value provided is not in a recognized ISO format. moment construction falls back to js Date(), ' +
+        'which is not reliable across all browsers and versions. Non ISO date formats are ' +
+        'discouraged and will be removed in an upcoming major release. Please refer to ' +
+        'http://momentjs.com/guides/#/warnings/js-date/ for more info.',
+        function (config) {
+            config._d = new Date(config._i + (config._useUTC ? ' UTC' : ''));
+        }
+    );
+
+    // Pick the first defined of two or three arguments.
+    function defaults(a, b, c) {
+        if (a != null) {
+            return a;
+        }
+        if (b != null) {
+            return b;
+        }
+        return c;
+    }
+
+    function currentDateArray(config) {
+        // hooks is actually the exported moment object
+        var nowValue = new Date(utils_hooks__hooks.now());
+        if (config._useUTC) {
+            return [nowValue.getUTCFullYear(), nowValue.getUTCMonth(), nowValue.getUTCDate()];
+        }
+        return [nowValue.getFullYear(), nowValue.getMonth(), nowValue.getDate()];
+    }
+
+    // convert an array to a date.
+    // the array should mirror the parameters below
+    // note: all values past the year are optional and will default to the lowest possible value.
+    // [year, month, day , hour, minute, second, millisecond]
+    function configFromArray (config) {
+        var i, date, input = [], currentDate, yearToUse;
+
+        if (config._d) {
+            return;
+        }
+
+        currentDate = currentDateArray(config);
+
+        //compute day of the year from weeks and weekdays
+        if (config._w && config._a[DATE] == null && config._a[MONTH] == null) {
+            dayOfYearFromWeekInfo(config);
+        }
+
+        //if the day of the year is set, figure out what it is
+        if (config._dayOfYear) {
+            yearToUse = defaults(config._a[YEAR], currentDate[YEAR]);
+
+            if (config._dayOfYear > daysInYear(yearToUse)) {
+                getParsingFlags(config)._overflowDayOfYear = true;
+            }
+
+            date = createUTCDate(yearToUse, 0, config._dayOfYear);
+            config._a[MONTH] = date.getUTCMonth();
+            config._a[DATE] = date.getUTCDate();
+        }
+
+        // Default to current date.
+        // * if no year, month, day of month are given, default to today
+        // * if day of month is given, default month and year
+        // * if month is given, default only year
+        // * if year is given, don't default anything
+        for (i = 0; i < 3 && config._a[i] == null; ++i) {
+            config._a[i] = input[i] = currentDate[i];
+        }
+
+        // Zero out whatever was not defaulted, including time
+        for (; i < 7; i++) {
+            config._a[i] = input[i] = (config._a[i] == null) ? (i === 2 ? 1 : 0) : config._a[i];
+        }
+
+        // Check for 24:00:00.000
+        if (config._a[HOUR] === 24 &&
+                config._a[MINUTE] === 0 &&
+                config._a[SECOND] === 0 &&
+                config._a[MILLISECOND] === 0) {
+            config._nextDay = true;
+            config._a[HOUR] = 0;
+        }
+
+        config._d = (config._useUTC ? createUTCDate : createDate).apply(null, input);
+        // Apply timezone offset from input. The actual utcOffset can be changed
+        // with parseZone.
+        if (config._tzm != null) {
+            config._d.setUTCMinutes(config._d.getUTCMinutes() - config._tzm);
+        }
+
+        if (config._nextDay) {
+            config._a[HOUR] = 24;
+        }
+    }
+
+    function dayOfYearFromWeekInfo(config) {
+        var w, weekYear, week, weekday, dow, doy, temp, weekdayOverflow;
+
+        w = config._w;
+        if (w.GG != null || w.W != null || w.E != null) {
+            dow = 1;
+            doy = 4;
+
+            // TODO: We need to take the current isoWeekYear, but that depends on
+            // how we interpret now (local, utc, fixed offset). So create
+            // a now version of current config (take local/utc/offset flags, and
+            // create now).
+            weekYear = defaults(w.GG, config._a[YEAR], weekOfYear(local__createLocal(), 1, 4).year);
+            week = defaults(w.W, 1);
+            weekday = defaults(w.E, 1);
+            if (weekday < 1 || weekday > 7) {
+                weekdayOverflow = true;
+            }
+        } else {
+            dow = config._locale._week.dow;
+            doy = config._locale._week.doy;
+
+            weekYear = defaults(w.gg, config._a[YEAR], weekOfYear(local__createLocal(), dow, doy).year);
+            week = defaults(w.w, 1);
+
+            if (w.d != null) {
+                // weekday -- low day numbers are considered next week
+                weekday = w.d;
+                if (weekday < 0 || weekday > 6) {
+                    weekdayOverflow = true;
+                }
+            } else if (w.e != null) {
+                // local weekday -- counting starts from begining of week
+                weekday = w.e + dow;
+                if (w.e < 0 || w.e > 6) {
+                    weekdayOverflow = true;
+                }
+            } else {
+                // default to begining of week
+                weekday = dow;
+            }
+        }
+        if (week < 1 || week > weeksInYear(weekYear, dow, doy)) {
+            getParsingFlags(config)._overflowWeeks = true;
+        } else if (weekdayOverflow != null) {
+            getParsingFlags(config)._overflowWeekday = true;
+        } else {
+            temp = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy);
+            config._a[YEAR] = temp.year;
+            config._dayOfYear = temp.dayOfYear;
+        }
+    }
+
+    // constant that refers to the ISO standard
+    utils_hooks__hooks.ISO_8601 = function () {};
+
+    // date from string and format string
+    function configFromStringAndFormat(config) {
+        // TODO: Move this to another part of the creation flow to prevent circular deps
+        if (config._f === utils_hooks__hooks.ISO_8601) {
+            configFromISO(config);
+            return;
+        }
+
+        config._a = [];
+        getParsingFlags(config).empty = true;
+
+        // This array is used to make a Date, either with `new Date` or `Date.UTC`
+        var string = '' + config._i,
+            i, parsedInput, tokens, token, skipped,
+            stringLength = string.length,
+            totalParsedInputLength = 0;
+
+        tokens = expandFormat(config._f, config._locale).match(formattingTokens) || [];
+
+        for (i = 0; i < tokens.length; i++) {
+            token = tokens[i];
+            parsedInput = (string.match(getParseRegexForToken(token, config)) || [])[0];
+            // console.log('token', token, 'parsedInput', parsedInput,
+            //         'regex', getParseRegexForToken(token, config));
+            if (parsedInput) {
+                skipped = string.substr(0, string.indexOf(parsedInput));
+                if (skipped.length > 0) {
+                    getParsingFlags(config).unusedInput.push(skipped);
+                }
+                string = string.slice(string.indexOf(parsedInput) + parsedInput.length);
+                totalParsedInputLength += parsedInput.length;
+            }
+            // don't parse if it's not a known token
+            if (formatTokenFunctions[token]) {
+                if (parsedInput) {
+                    getParsingFlags(config).empty = false;
+                }
+                else {
+                    getParsingFlags(config).unusedTokens.push(token);
+                }
+                addTimeToArrayFromToken(token, parsedInput, config);
+            }
+            else if (config._strict && !parsedInput) {
+                getParsingFlags(config).unusedTokens.push(token);
+            }
+        }
+
+        // add remaining unparsed input length to the string
+        getParsingFlags(config).charsLeftOver = stringLength - totalParsedInputLength;
+        if (string.length > 0) {
+            getParsingFlags(config).unusedInput.push(string);
+        }
+
+        // clear _12h flag if hour is <= 12
+        if (config._a[HOUR] <= 12 &&
+            getParsingFlags(config).bigHour === true &&
+            config._a[HOUR] > 0) {
+            getParsingFlags(config).bigHour = undefined;
+        }
+
+        getParsingFlags(config).parsedDateParts = config._a.slice(0);
+        getParsingFlags(config).meridiem = config._meridiem;
+        // handle meridiem
+        config._a[HOUR] = meridiemFixWrap(config._locale, config._a[HOUR], config._meridiem);
+
+        configFromArray(config);
+        checkOverflow(config);
+    }
+
+
+    function meridiemFixWrap (locale, hour, meridiem) {
+        var isPm;
+
+        if (meridiem == null) {
+            // nothing to do
+            return hour;
+        }
+        if (locale.meridiemHour != null) {
+            return locale.meridiemHour(hour, meridiem);
+        } else if (locale.isPM != null) {
+            // Fallback
+            isPm = locale.isPM(meridiem);
+            if (isPm && hour < 12) {
+                hour += 12;
+            }
+            if (!isPm && hour === 12) {
+                hour = 0;
+            }
+            return hour;
+        } else {
+            // this is not supposed to happen
+            return hour;
+        }
+    }
+
+    // date from string and array of format strings
+    function configFromStringAndArray(config) {
+        var tempConfig,
+            bestMoment,
+
+            scoreToBeat,
+            i,
+            currentScore;
+
+        if (config._f.length === 0) {
+            getParsingFlags(config).invalidFormat = true;
+            config._d = new Date(NaN);
+            return;
+        }
+
+        for (i = 0; i < config._f.length; i++) {
+            currentScore = 0;
+            tempConfig = copyConfig({}, config);
+            if (config._useUTC != null) {
+                tempConfig._useUTC = config._useUTC;
+            }
+            tempConfig._f = config._f[i];
+            configFromStringAndFormat(tempConfig);
+
+            if (!valid__isValid(tempConfig)) {
+                continue;
+            }
+
+            // if there is any input that was not parsed add a penalty for that format
+            currentScore += getParsingFlags(tempConfig).charsLeftOver;
+
+            //or tokens
+            currentScore += getParsingFlags(tempConfig).unusedTokens.length * 10;
+
+            getParsingFlags(tempConfig).score = currentScore;
+
+            if (scoreToBeat == null || currentScore < scoreToBeat) {
+                scoreToBeat = currentScore;
+                bestMoment = tempConfig;
+            }
+        }
+
+        extend(config, bestMoment || tempConfig);
+    }
+
+    function configFromObject(config) {
+        if (config._d) {
+            return;
+        }
+
+        var i = normalizeObjectUnits(config._i);
+        config._a = map([i.year, i.month, i.day || i.date, i.hour, i.minute, i.second, i.millisecond], function (obj) {
+            return obj && parseInt(obj, 10);
+        });
+
+        configFromArray(config);
+    }
+
+    function createFromConfig (config) {
+        var res = new Moment(checkOverflow(prepareConfig(config)));
+        if (res._nextDay) {
+            // Adding is smart enough around DST
+            res.add(1, 'd');
+            res._nextDay = undefined;
+        }
+
+        return res;
+    }
+
+    function prepareConfig (config) {
+        var input = config._i,
+            format = config._f;
+
+        config._locale = config._locale || locale_locales__getLocale(config._l);
+
+        if (input === null || (format === undefined && input === '')) {
+            return valid__createInvalid({nullInput: true});
+        }
+
+        if (typeof input === 'string') {
+            config._i = input = config._locale.preparse(input);
+        }
+
+        if (isMoment(input)) {
+            return new Moment(checkOverflow(input));
+        } else if (isArray(format)) {
+            configFromStringAndArray(config);
+        } else if (isDate(input)) {
+            config._d = input;
+        } else if (format) {
+            configFromStringAndFormat(config);
+        }  else {
+            configFromInput(config);
+        }
+
+        if (!valid__isValid(config)) {
+            config._d = null;
+        }
+
+        return config;
+    }
+
+    function configFromInput(config) {
+        var input = config._i;
+        if (input === undefined) {
+            config._d = new Date(utils_hooks__hooks.now());
+        } else if (isDate(input)) {
+            config._d = new Date(input.valueOf());
+        } else if (typeof input === 'string') {
+            configFromString(config);
+        } else if (isArray(input)) {
+            config._a = map(input.slice(0), function (obj) {
+                return parseInt(obj, 10);
+            });
+            configFromArray(config);
+        } else if (typeof(input) === 'object') {
+            configFromObject(config);
+        } else if (typeof(input) === 'number') {
+            // from milliseconds
+            config._d = new Date(input);
+        } else {
+            utils_hooks__hooks.createFromInputFallback(config);
+        }
+    }
+
+    function createLocalOrUTC (input, format, locale, strict, isUTC) {
+        var c = {};
+
+        if (typeof(locale) === 'boolean') {
+            strict = locale;
+            locale = undefined;
+        }
+
+        if ((isObject(input) && isObjectEmpty(input)) ||
+                (isArray(input) && input.length === 0)) {
+            input = undefined;
+        }
+        // object construction must be done this way.
+        // https://github.com/moment/moment/issues/1423
+        c._isAMomentObject = true;
+        c._useUTC = c._isUTC = isUTC;
+        c._l = locale;
+        c._i = input;
+        c._f = format;
+        c._strict = strict;
+
+        return createFromConfig(c);
+    }
+
+    function local__createLocal (input, format, locale, strict) {
+        return createLocalOrUTC(input, format, locale, strict, false);
+    }
+
+    var prototypeMin = deprecate(
+        'moment().min is deprecated, use moment.max instead. http://momentjs.com/guides/#/warnings/min-max/',
+        function () {
+            var other = local__createLocal.apply(null, arguments);
+            if (this.isValid() && other.isValid()) {
+                return other < this ? this : other;
+            } else {
+                return valid__createInvalid();
+            }
+        }
+    );
+
+    var prototypeMax = deprecate(
+        'moment().max is deprecated, use moment.min instead. http://momentjs.com/guides/#/warnings/min-max/',
+        function () {
+            var other = local__createLocal.apply(null, arguments);
+            if (this.isValid() && other.isValid()) {
+                return other > this ? this : other;
+            } else {
+                return valid__createInvalid();
+            }
+        }
+    );
+
+    // Pick a moment m from moments so that m[fn](other) is true for all
+    // other. This relies on the function fn to be transitive.
+    //
+    // moments should either be an array of moment objects or an array, whose
+    // first element is an array of moment objects.
+    function pickBy(fn, moments) {
+        var res, i;
+        if (moments.length === 1 && isArray(moments[0])) {
+            moments = moments[0];
+        }
+        if (!moments.length) {
+            return local__createLocal();
+        }
+        res = moments[0];
+        for (i = 1; i < moments.length; ++i) {
+            if (!moments[i].isValid() || moments[i][fn](res)) {
+                res = moments[i];
+            }
+        }
+        return res;
+    }
+
+    // TODO: Use [].sort instead?
+    function min () {
+        var args = [].slice.call(arguments, 0);
+
+        return pickBy('isBefore', args);
+    }
+
+    function max () {
+        var args = [].slice.call(arguments, 0);
+
+        return pickBy('isAfter', args);
+    }
+
+    var now = function () {
+        return Date.now ? Date.now() : +(new Date());
+    };
+
+    function Duration (duration) {
+        var normalizedInput = normalizeObjectUnits(duration),
+            years = normalizedInput.year || 0,
+            quarters = normalizedInput.quarter || 0,
+            months = normalizedInput.month || 0,
+            weeks = normalizedInput.week || 0,
+            days = normalizedInput.day || 0,
+            hours = normalizedInput.hour || 0,
+            minutes = normalizedInput.minute || 0,
+            seconds = normalizedInput.second || 0,
+            milliseconds = normalizedInput.millisecond || 0;
+
+        // representation for dateAddRemove
+        this._milliseconds = +milliseconds +
+            seconds * 1e3 + // 1000
+            minutes * 6e4 + // 1000 * 60
+            hours * 1000 * 60 * 60; //using 1000 * 60 * 60 instead of 36e5 to avoid floating point rounding errors https://github.com/moment/moment/issues/2978
+        // Because of dateAddRemove treats 24 hours as different from a
+        // day when working around DST, we need to store them separately
+        this._days = +days +
+            weeks * 7;
+        // It is impossible translate months into days without knowing
+        // which months you are are talking about, so we have to store
+        // it separately.
+        this._months = +months +
+            quarters * 3 +
+            years * 12;
+
+        this._data = {};
+
+        this._locale = locale_locales__getLocale();
+
+        this._bubble();
+    }
+
+    function isDuration (obj) {
+        return obj instanceof Duration;
+    }
+
+    function absRound (number) {
+        if (number < 0) {
+            return Math.round(-1 * number) * -1;
+        } else {
+            return Math.round(number);
+        }
+    }
+
+    // FORMATTING
+
+    function offset (token, separator) {
+        addFormatToken(token, 0, 0, function () {
+            var offset = this.utcOffset();
+            var sign = '+';
+            if (offset < 0) {
+                offset = -offset;
+                sign = '-';
+            }
+            return sign + zeroFill(~~(offset / 60), 2) + separator + zeroFill(~~(offset) % 60, 2);
+        });
+    }
+
+    offset('Z', ':');
+    offset('ZZ', '');
+
+    // PARSING
+
+    addRegexToken('Z',  matchShortOffset);
+    addRegexToken('ZZ', matchShortOffset);
+    addParseToken(['Z', 'ZZ'], function (input, array, config) {
+        config._useUTC = true;
+        config._tzm = offsetFromString(matchShortOffset, input);
+    });
+
+    // HELPERS
+
+    // timezone chunker
+    // '+10:00' > ['10',  '00']
+    // '-1530'  > ['-15', '30']
+    var chunkOffset = /([\+\-]|\d\d)/gi;
+
+    function offsetFromString(matcher, string) {
+        var matches = ((string || '').match(matcher) || []);
+        var chunk   = matches[matches.length - 1] || [];
+        var parts   = (chunk + '').match(chunkOffset) || ['-', 0, 0];
+        var minutes = +(parts[1] * 60) + toInt(parts[2]);
+
+        return parts[0] === '+' ? minutes : -minutes;
+    }
+
+    // Return a moment from input, that is local/utc/zone equivalent to model.
+    function cloneWithOffset(input, model) {
+        var res, diff;
+        if (model._isUTC) {
+            res = model.clone();
+            diff = (isMoment(input) || isDate(input) ? input.valueOf() : local__createLocal(input).valueOf()) - res.valueOf();
+            // Use low-level api, because this fn is low-level api.
+            res._d.setTime(res._d.valueOf() + diff);
+            utils_hooks__hooks.updateOffset(res, false);
+            return res;
+        } else {
+            return local__createLocal(input).local();
+        }
+    }
+
+    function getDateOffset (m) {
+        // On Firefox.24 Date#getTimezoneOffset returns a floating point.
+        // https://github.com/moment/moment/pull/1871
+        return -Math.round(m._d.getTimezoneOffset() / 15) * 15;
+    }
+
+    // HOOKS
+
+    // This function will be called whenever a moment is mutated.
+    // It is intended to keep the offset in sync with the timezone.
+    utils_hooks__hooks.updateOffset = function () {};
+
+    // MOMENTS
+
+    // keepLocalTime = true means only change the timezone, without
+    // affecting the local hour. So 5:31:26 +0300 --[utcOffset(2, true)]-->
+    // 5:31:26 +0200 It is possible that 5:31:26 doesn't exist with offset
+    // +0200, so we adjust the time as needed, to be valid.
+    //
+    // Keeping the time actually adds/subtracts (one hour)
+    // from the actual represented time. That is why we call updateOffset
+    // a second time. In case it wants us to change the offset again
+    // _changeInProgress == true case, then we have to adjust, because
+    // there is no such time in the given timezone.
+    function getSetOffset (input, keepLocalTime) {
+        var offset = this._offset || 0,
+            localAdjust;
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
+        if (input != null) {
+            if (typeof input === 'string') {
+                input = offsetFromString(matchShortOffset, input);
+            } else if (Math.abs(input) < 16) {
+                input = input * 60;
+            }
+            if (!this._isUTC && keepLocalTime) {
+                localAdjust = getDateOffset(this);
+            }
+            this._offset = input;
+            this._isUTC = true;
+            if (localAdjust != null) {
+                this.add(localAdjust, 'm');
+            }
+            if (offset !== input) {
+                if (!keepLocalTime || this._changeInProgress) {
+                    add_subtract__addSubtract(this, create__createDuration(input - offset, 'm'), 1, false);
+                } else if (!this._changeInProgress) {
+                    this._changeInProgress = true;
+                    utils_hooks__hooks.updateOffset(this, true);
+                    this._changeInProgress = null;
+                }
+            }
+            return this;
+        } else {
+            return this._isUTC ? offset : getDateOffset(this);
+        }
+    }
+
+    function getSetZone (input, keepLocalTime) {
+        if (input != null) {
+            if (typeof input !== 'string') {
+                input = -input;
+            }
+
+            this.utcOffset(input, keepLocalTime);
+
+            return this;
+        } else {
+            return -this.utcOffset();
+        }
+    }
+
+    function setOffsetToUTC (keepLocalTime) {
+        return this.utcOffset(0, keepLocalTime);
+    }
+
+    function setOffsetToLocal (keepLocalTime) {
+        if (this._isUTC) {
+            this.utcOffset(0, keepLocalTime);
+            this._isUTC = false;
+
+            if (keepLocalTime) {
+                this.subtract(getDateOffset(this), 'm');
+            }
+        }
+        return this;
+    }
+
+    function setOffsetToParsedOffset () {
+        if (this._tzm) {
+            this.utcOffset(this._tzm);
+        } else if (typeof this._i === 'string') {
+            var tZone = offsetFromString(matchOffset, this._i);
+
+            if (tZone === 0) {
+                this.utcOffset(0, true);
+            } else {
+                this.utcOffset(offsetFromString(matchOffset, this._i));
+            }
+        }
+        return this;
+    }
+
+    function hasAlignedHourOffset (input) {
+        if (!this.isValid()) {
+            return false;
+        }
+        input = input ? local__createLocal(input).utcOffset() : 0;
+
+        return (this.utcOffset() - input) % 60 === 0;
+    }
+
+    function isDaylightSavingTime () {
+        return (
+            this.utcOffset() > this.clone().month(0).utcOffset() ||
+            this.utcOffset() > this.clone().month(5).utcOffset()
+        );
+    }
+
+    function isDaylightSavingTimeShifted () {
+        if (!isUndefined(this._isDSTShifted)) {
+            return this._isDSTShifted;
+        }
+
+        var c = {};
+
+        copyConfig(c, this);
+        c = prepareConfig(c);
+
+        if (c._a) {
+            var other = c._isUTC ? create_utc__createUTC(c._a) : local__createLocal(c._a);
+            this._isDSTShifted = this.isValid() &&
+                compareArrays(c._a, other.toArray()) > 0;
+        } else {
+            this._isDSTShifted = false;
+        }
+
+        return this._isDSTShifted;
+    }
+
+    function isLocal () {
+        return this.isValid() ? !this._isUTC : false;
+    }
+
+    function isUtcOffset () {
+        return this.isValid() ? this._isUTC : false;
+    }
+
+    function isUtc () {
+        return this.isValid() ? this._isUTC && this._offset === 0 : false;
+    }
+
+    // ASP.NET json date format regex
+    var aspNetRegex = /^(\-)?(?:(\d*)[. ])?(\d+)\:(\d+)(?:\:(\d+)(\.\d*)?)?$/;
+
+    // from http://docs.closure-library.googlecode.com/git/closure_goog_date_date.js.source.html
+    // somewhat more in line with 4.4.3.2 2004 spec, but allows decimal anywhere
+    // and further modified to allow for strings containing both week and day
+    var isoRegex = /^(-)?P(?:(-?[0-9,.]*)Y)?(?:(-?[0-9,.]*)M)?(?:(-?[0-9,.]*)W)?(?:(-?[0-9,.]*)D)?(?:T(?:(-?[0-9,.]*)H)?(?:(-?[0-9,.]*)M)?(?:(-?[0-9,.]*)S)?)?$/;
+
+    function create__createDuration (input, key) {
+        var duration = input,
+            // matching against regexp is expensive, do it on demand
+            match = null,
+            sign,
+            ret,
+            diffRes;
+
+        if (isDuration(input)) {
+            duration = {
+                ms : input._milliseconds,
+                d  : input._days,
+                M  : input._months
+            };
+        } else if (typeof input === 'number') {
+            duration = {};
+            if (key) {
+                duration[key] = input;
+            } else {
+                duration.milliseconds = input;
+            }
+        } else if (!!(match = aspNetRegex.exec(input))) {
+            sign = (match[1] === '-') ? -1 : 1;
+            duration = {
+                y  : 0,
+                d  : toInt(match[DATE])                         * sign,
+                h  : toInt(match[HOUR])                         * sign,
+                m  : toInt(match[MINUTE])                       * sign,
+                s  : toInt(match[SECOND])                       * sign,
+                ms : toInt(absRound(match[MILLISECOND] * 1000)) * sign // the millisecond decimal point is included in the match
+            };
+        } else if (!!(match = isoRegex.exec(input))) {
+            sign = (match[1] === '-') ? -1 : 1;
+            duration = {
+                y : parseIso(match[2], sign),
+                M : parseIso(match[3], sign),
+                w : parseIso(match[4], sign),
+                d : parseIso(match[5], sign),
+                h : parseIso(match[6], sign),
+                m : parseIso(match[7], sign),
+                s : parseIso(match[8], sign)
+            };
+        } else if (duration == null) {// checks for null or undefined
+            duration = {};
+        } else if (typeof duration === 'object' && ('from' in duration || 'to' in duration)) {
+            diffRes = momentsDifference(local__createLocal(duration.from), local__createLocal(duration.to));
+
+            duration = {};
+            duration.ms = diffRes.milliseconds;
+            duration.M = diffRes.months;
+        }
+
+        ret = new Duration(duration);
+
+        if (isDuration(input) && hasOwnProp(input, '_locale')) {
+            ret._locale = input._locale;
+        }
+
+        return ret;
+    }
+
+    create__createDuration.fn = Duration.prototype;
+
+    function parseIso (inp, sign) {
+        // We'd normally use ~~inp for this, but unfortunately it also
+        // converts floats to ints.
+        // inp may be undefined, so careful calling replace on it.
+        var res = inp && parseFloat(inp.replace(',', '.'));
+        // apply sign while we're at it
+        return (isNaN(res) ? 0 : res) * sign;
+    }
+
+    function positiveMomentsDifference(base, other) {
+        var res = {milliseconds: 0, months: 0};
+
+        res.months = other.month() - base.month() +
+            (other.year() - base.year()) * 12;
+        if (base.clone().add(res.months, 'M').isAfter(other)) {
+            --res.months;
+        }
+
+        res.milliseconds = +other - +(base.clone().add(res.months, 'M'));
+
+        return res;
+    }
+
+    function momentsDifference(base, other) {
+        var res;
+        if (!(base.isValid() && other.isValid())) {
+            return {milliseconds: 0, months: 0};
+        }
+
+        other = cloneWithOffset(other, base);
+        if (base.isBefore(other)) {
+            res = positiveMomentsDifference(base, other);
+        } else {
+            res = positiveMomentsDifference(other, base);
+            res.milliseconds = -res.milliseconds;
+            res.months = -res.months;
+        }
+
+        return res;
+    }
+
+    // TODO: remove 'name' arg after deprecation is removed
+    function createAdder(direction, name) {
+        return function (val, period) {
+            var dur, tmp;
+            //invert the arguments, but complain about it
+            if (period !== null && !isNaN(+period)) {
+                deprecateSimple(name, 'moment().' + name  + '(period, number) is deprecated. Please use moment().' + name + '(number, period). ' +
+                'See http://momentjs.com/guides/#/warnings/add-inverted-param/ for more info.');
+                tmp = val; val = period; period = tmp;
+            }
+
+            val = typeof val === 'string' ? +val : val;
+            dur = create__createDuration(val, period);
+            add_subtract__addSubtract(this, dur, direction);
+            return this;
+        };
+    }
+
+    function add_subtract__addSubtract (mom, duration, isAdding, updateOffset) {
+        var milliseconds = duration._milliseconds,
+            days = absRound(duration._days),
+            months = absRound(duration._months);
+
+        if (!mom.isValid()) {
+            // No op
+            return;
+        }
+
+        updateOffset = updateOffset == null ? true : updateOffset;
+
+        if (milliseconds) {
+            mom._d.setTime(mom._d.valueOf() + milliseconds * isAdding);
+        }
+        if (days) {
+            get_set__set(mom, 'Date', get_set__get(mom, 'Date') + days * isAdding);
+        }
+        if (months) {
+            setMonth(mom, get_set__get(mom, 'Month') + months * isAdding);
+        }
+        if (updateOffset) {
+            utils_hooks__hooks.updateOffset(mom, days || months);
+        }
+    }
+
+    var add_subtract__add      = createAdder(1, 'add');
+    var add_subtract__subtract = createAdder(-1, 'subtract');
+
+    function getCalendarFormat(myMoment, now) {
+        var diff = myMoment.diff(now, 'days', true);
+        return diff < -6 ? 'sameElse' :
+                diff < -1 ? 'lastWeek' :
+                diff < 0 ? 'lastDay' :
+                diff < 1 ? 'sameDay' :
+                diff < 2 ? 'nextDay' :
+                diff < 7 ? 'nextWeek' : 'sameElse';
+    }
+
+    function moment_calendar__calendar (time, formats) {
+        // We want to compare the start of today, vs this.
+        // Getting start-of-today depends on whether we're local/utc/offset or not.
+        var now = time || local__createLocal(),
+            sod = cloneWithOffset(now, this).startOf('day'),
+            format = utils_hooks__hooks.calendarFormat(this, sod) || 'sameElse';
+
+        var output = formats && (isFunction(formats[format]) ? formats[format].call(this, now) : formats[format]);
+
+        return this.format(output || this.localeData().calendar(format, this, local__createLocal(now)));
+    }
+
+    function clone () {
+        return new Moment(this);
+    }
+
+    function isAfter (input, units) {
+        var localInput = isMoment(input) ? input : local__createLocal(input);
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
+        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
+        if (units === 'millisecond') {
+            return this.valueOf() > localInput.valueOf();
+        } else {
+            return localInput.valueOf() < this.clone().startOf(units).valueOf();
+        }
+    }
+
+    function isBefore (input, units) {
+        var localInput = isMoment(input) ? input : local__createLocal(input);
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
+        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
+        if (units === 'millisecond') {
+            return this.valueOf() < localInput.valueOf();
+        } else {
+            return this.clone().endOf(units).valueOf() < localInput.valueOf();
+        }
+    }
+
+    function isBetween (from, to, units, inclusivity) {
+        inclusivity = inclusivity || '()';
+        return (inclusivity[0] === '(' ? this.isAfter(from, units) : !this.isBefore(from, units)) &&
+            (inclusivity[1] === ')' ? this.isBefore(to, units) : !this.isAfter(to, units));
+    }
+
+    function isSame (input, units) {
+        var localInput = isMoment(input) ? input : local__createLocal(input),
+            inputMs;
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
+        units = normalizeUnits(units || 'millisecond');
+        if (units === 'millisecond') {
+            return this.valueOf() === localInput.valueOf();
+        } else {
+            inputMs = localInput.valueOf();
+            return this.clone().startOf(units).valueOf() <= inputMs && inputMs <= this.clone().endOf(units).valueOf();
+        }
+    }
+
+    function isSameOrAfter (input, units) {
+        return this.isSame(input, units) || this.isAfter(input,units);
+    }
+
+    function isSameOrBefore (input, units) {
+        return this.isSame(input, units) || this.isBefore(input,units);
+    }
+
+    function diff (input, units, asFloat) {
+        var that,
+            zoneDelta,
+            delta, output;
+
+        if (!this.isValid()) {
+            return NaN;
+        }
+
+        that = cloneWithOffset(input, this);
+
+        if (!that.isValid()) {
+            return NaN;
+        }
+
+        zoneDelta = (that.utcOffset() - this.utcOffset()) * 6e4;
+
+        units = normalizeUnits(units);
+
+        if (units === 'year' || units === 'month' || units === 'quarter') {
+            output = monthDiff(this, that);
+            if (units === 'quarter') {
+                output = output / 3;
+            } else if (units === 'year') {
+                output = output / 12;
+            }
+        } else {
+            delta = this - that;
+            output = units === 'second' ? delta / 1e3 : // 1000
+                units === 'minute' ? delta / 6e4 : // 1000 * 60
+                units === 'hour' ? delta / 36e5 : // 1000 * 60 * 60
+                units === 'day' ? (delta - zoneDelta) / 864e5 : // 1000 * 60 * 60 * 24, negate dst
+                units === 'week' ? (delta - zoneDelta) / 6048e5 : // 1000 * 60 * 60 * 24 * 7, negate dst
+                delta;
+        }
+        return asFloat ? output : absFloor(output);
+    }
+
+    function monthDiff (a, b) {
+        // difference in months
+        var wholeMonthDiff = ((b.year() - a.year()) * 12) + (b.month() - a.month()),
+            // b is in (anchor - 1 month, anchor + 1 month)
+            anchor = a.clone().add(wholeMonthDiff, 'months'),
+            anchor2, adjust;
+
+        if (b - anchor < 0) {
+            anchor2 = a.clone().add(wholeMonthDiff - 1, 'months');
+            // linear across the month
+            adjust = (b - anchor) / (anchor - anchor2);
+        } else {
+            anchor2 = a.clone().add(wholeMonthDiff + 1, 'months');
+            // linear across the month
+            adjust = (b - anchor) / (anchor2 - anchor);
+        }
+
+        //check for negative zero, return zero if negative zero
+        return -(wholeMonthDiff + adjust) || 0;
+    }
+
+    utils_hooks__hooks.defaultFormat = 'YYYY-MM-DDTHH:mm:ssZ';
+    utils_hooks__hooks.defaultFormatUtc = 'YYYY-MM-DDTHH:mm:ss[Z]';
+
+    function toString () {
+        return this.clone().locale('en').format('ddd MMM DD YYYY HH:mm:ss [GMT]ZZ');
+    }
+
+    function moment_format__toISOString () {
+        var m = this.clone().utc();
+        if (0 < m.year() && m.year() <= 9999) {
+            if (isFunction(Date.prototype.toISOString)) {
+                // native implementation is ~50x faster, use it when we can
+                return this.toDate().toISOString();
+            } else {
+                return formatMoment(m, 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+            }
+        } else {
+            return formatMoment(m, 'YYYYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+        }
+    }
+
+    function format (inputString) {
+        if (!inputString) {
+            inputString = this.isUtc() ? utils_hooks__hooks.defaultFormatUtc : utils_hooks__hooks.defaultFormat;
+        }
+        var output = formatMoment(this, inputString);
+        return this.localeData().postformat(output);
+    }
+
+    function from (time, withoutSuffix) {
+        if (this.isValid() &&
+                ((isMoment(time) && time.isValid()) ||
+                 local__createLocal(time).isValid())) {
+            return create__createDuration({to: this, from: time}).locale(this.locale()).humanize(!withoutSuffix);
+        } else {
+            return this.localeData().invalidDate();
+        }
+    }
+
+    function fromNow (withoutSuffix) {
+        return this.from(local__createLocal(), withoutSuffix);
+    }
+
+    function to (time, withoutSuffix) {
+        if (this.isValid() &&
+                ((isMoment(time) && time.isValid()) ||
+                 local__createLocal(time).isValid())) {
+            return create__createDuration({from: this, to: time}).locale(this.locale()).humanize(!withoutSuffix);
+        } else {
+            return this.localeData().invalidDate();
+        }
+    }
+
+    function toNow (withoutSuffix) {
+        return this.to(local__createLocal(), withoutSuffix);
+    }
+
+    // If passed a locale key, it will set the locale for this
+    // instance.  Otherwise, it will return the locale configuration
+    // variables for this instance.
+    function locale (key) {
+        var newLocaleData;
+
+        if (key === undefined) {
+            return this._locale._abbr;
+        } else {
+            newLocaleData = locale_locales__getLocale(key);
+            if (newLocaleData != null) {
+                this._locale = newLocaleData;
+            }
+            return this;
+        }
+    }
+
+    var lang = deprecate(
+        'moment().lang() is deprecated. Instead, use moment().localeData() to get the language configuration. Use moment().locale() to change languages.',
+        function (key) {
+            if (key === undefined) {
+                return this.localeData();
+            } else {
+                return this.locale(key);
+            }
+        }
+    );
+
+    function localeData () {
+        return this._locale;
+    }
+
+    function startOf (units) {
+        units = normalizeUnits(units);
+        // the following switch intentionally omits break keywords
+        // to utilize falling through the cases.
+        switch (units) {
+            case 'year':
+                this.month(0);
+                /* falls through */
+            case 'quarter':
+            case 'month':
+                this.date(1);
+                /* falls through */
+            case 'week':
+            case 'isoWeek':
+            case 'day':
+            case 'date':
+                this.hours(0);
+                /* falls through */
+            case 'hour':
+                this.minutes(0);
+                /* falls through */
+            case 'minute':
+                this.seconds(0);
+                /* falls through */
+            case 'second':
+                this.milliseconds(0);
+        }
+
+        // weeks are a special case
+        if (units === 'week') {
+            this.weekday(0);
+        }
+        if (units === 'isoWeek') {
+            this.isoWeekday(1);
+        }
+
+        // quarters are also special
+        if (units === 'quarter') {
+            this.month(Math.floor(this.month() / 3) * 3);
+        }
+
+        return this;
+    }
+
+    function endOf (units) {
+        units = normalizeUnits(units);
+        if (units === undefined || units === 'millisecond') {
+            return this;
+        }
+
+        // 'date' is an alias for 'day', so it should be considered as such.
+        if (units === 'date') {
+            units = 'day';
+        }
+
+        return this.startOf(units).add(1, (units === 'isoWeek' ? 'week' : units)).subtract(1, 'ms');
+    }
+
+    function to_type__valueOf () {
+        return this._d.valueOf() - ((this._offset || 0) * 60000);
+    }
+
+    function unix () {
+        return Math.floor(this.valueOf() / 1000);
+    }
+
+    function toDate () {
+        return new Date(this.valueOf());
+    }
+
+    function toArray () {
+        var m = this;
+        return [m.year(), m.month(), m.date(), m.hour(), m.minute(), m.second(), m.millisecond()];
+    }
+
+    function toObject () {
+        var m = this;
+        return {
+            years: m.year(),
+            months: m.month(),
+            date: m.date(),
+            hours: m.hours(),
+            minutes: m.minutes(),
+            seconds: m.seconds(),
+            milliseconds: m.milliseconds()
+        };
+    }
+
+    function toJSON () {
+        // new Date(NaN).toJSON() === null
+        return this.isValid() ? this.toISOString() : null;
+    }
+
+    function moment_valid__isValid () {
+        return valid__isValid(this);
+    }
+
+    function parsingFlags () {
+        return extend({}, getParsingFlags(this));
+    }
+
+    function invalidAt () {
+        return getParsingFlags(this).overflow;
+    }
+
+    function creationData() {
+        return {
+            input: this._i,
+            format: this._f,
+            locale: this._locale,
+            isUTC: this._isUTC,
+            strict: this._strict
+        };
+    }
+
+    // FORMATTING
+
+    addFormatToken(0, ['gg', 2], 0, function () {
+        return this.weekYear() % 100;
+    });
+
+    addFormatToken(0, ['GG', 2], 0, function () {
+        return this.isoWeekYear() % 100;
+    });
+
+    function addWeekYearFormatToken (token, getter) {
+        addFormatToken(0, [token, token.length], 0, getter);
+    }
+
+    addWeekYearFormatToken('gggg',     'weekYear');
+    addWeekYearFormatToken('ggggg',    'weekYear');
+    addWeekYearFormatToken('GGGG',  'isoWeekYear');
+    addWeekYearFormatToken('GGGGG', 'isoWeekYear');
+
+    // ALIASES
+
+    addUnitAlias('weekYear', 'gg');
+    addUnitAlias('isoWeekYear', 'GG');
+
+    // PRIORITY
+
+    addUnitPriority('weekYear', 1);
+    addUnitPriority('isoWeekYear', 1);
+
+
+    // PARSING
+
+    addRegexToken('G',      matchSigned);
+    addRegexToken('g',      matchSigned);
+    addRegexToken('GG',     match1to2, match2);
+    addRegexToken('gg',     match1to2, match2);
+    addRegexToken('GGGG',   match1to4, match4);
+    addRegexToken('gggg',   match1to4, match4);
+    addRegexToken('GGGGG',  match1to6, match6);
+    addRegexToken('ggggg',  match1to6, match6);
+
+    addWeekParseToken(['gggg', 'ggggg', 'GGGG', 'GGGGG'], function (input, week, config, token) {
+        week[token.substr(0, 2)] = toInt(input);
+    });
+
+    addWeekParseToken(['gg', 'GG'], function (input, week, config, token) {
+        week[token] = utils_hooks__hooks.parseTwoDigitYear(input);
+    });
+
+    // MOMENTS
+
+    function getSetWeekYear (input) {
+        return getSetWeekYearHelper.call(this,
+                input,
+                this.week(),
+                this.weekday(),
+                this.localeData()._week.dow,
+                this.localeData()._week.doy);
+    }
+
+    function getSetISOWeekYear (input) {
+        return getSetWeekYearHelper.call(this,
+                input, this.isoWeek(), this.isoWeekday(), 1, 4);
+    }
+
+    function getISOWeeksInYear () {
+        return weeksInYear(this.year(), 1, 4);
+    }
+
+    function getWeeksInYear () {
+        var weekInfo = this.localeData()._week;
+        return weeksInYear(this.year(), weekInfo.dow, weekInfo.doy);
+    }
+
+    function getSetWeekYearHelper(input, week, weekday, dow, doy) {
+        var weeksTarget;
+        if (input == null) {
+            return weekOfYear(this, dow, doy).year;
+        } else {
+            weeksTarget = weeksInYear(input, dow, doy);
+            if (week > weeksTarget) {
+                week = weeksTarget;
+            }
+            return setWeekAll.call(this, input, week, weekday, dow, doy);
+        }
+    }
+
+    function setWeekAll(weekYear, week, weekday, dow, doy) {
+        var dayOfYearData = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy),
+            date = createUTCDate(dayOfYearData.year, 0, dayOfYearData.dayOfYear);
+
+        this.year(date.getUTCFullYear());
+        this.month(date.getUTCMonth());
+        this.date(date.getUTCDate());
+        return this;
+    }
+
+    // FORMATTING
+
+    addFormatToken('Q', 0, 'Qo', 'quarter');
+
+    // ALIASES
+
+    addUnitAlias('quarter', 'Q');
+
+    // PRIORITY
+
+    addUnitPriority('quarter', 7);
+
+    // PARSING
+
+    addRegexToken('Q', match1);
+    addParseToken('Q', function (input, array) {
+        array[MONTH] = (toInt(input) - 1) * 3;
+    });
+
+    // MOMENTS
+
+    function getSetQuarter (input) {
+        return input == null ? Math.ceil((this.month() + 1) / 3) : this.month((input - 1) * 3 + this.month() % 3);
+    }
+
+    // FORMATTING
+
+    addFormatToken('D', ['DD', 2], 'Do', 'date');
+
+    // ALIASES
+
+    addUnitAlias('date', 'D');
+
+    // PRIOROITY
+    addUnitPriority('date', 9);
+
+    // PARSING
+
+    addRegexToken('D',  match1to2);
+    addRegexToken('DD', match1to2, match2);
+    addRegexToken('Do', function (isStrict, locale) {
+        return isStrict ? locale._ordinalParse : locale._ordinalParseLenient;
+    });
+
+    addParseToken(['D', 'DD'], DATE);
+    addParseToken('Do', function (input, array) {
+        array[DATE] = toInt(input.match(match1to2)[0], 10);
+    });
+
+    // MOMENTS
+
+    var getSetDayOfMonth = makeGetSet('Date', true);
+
+    // FORMATTING
+
+    addFormatToken('DDD', ['DDDD', 3], 'DDDo', 'dayOfYear');
+
+    // ALIASES
+
+    addUnitAlias('dayOfYear', 'DDD');
+
+    // PRIORITY
+    addUnitPriority('dayOfYear', 4);
+
+    // PARSING
+
+    addRegexToken('DDD',  match1to3);
+    addRegexToken('DDDD', match3);
+    addParseToken(['DDD', 'DDDD'], function (input, array, config) {
+        config._dayOfYear = toInt(input);
+    });
+
+    // HELPERS
+
+    // MOMENTS
+
+    function getSetDayOfYear (input) {
+        var dayOfYear = Math.round((this.clone().startOf('day') - this.clone().startOf('year')) / 864e5) + 1;
+        return input == null ? dayOfYear : this.add((input - dayOfYear), 'd');
+    }
+
+    // FORMATTING
+
+    addFormatToken('m', ['mm', 2], 0, 'minute');
+
+    // ALIASES
+
+    addUnitAlias('minute', 'm');
+
+    // PRIORITY
+
+    addUnitPriority('minute', 14);
+
+    // PARSING
+
+    addRegexToken('m',  match1to2);
+    addRegexToken('mm', match1to2, match2);
+    addParseToken(['m', 'mm'], MINUTE);
+
+    // MOMENTS
+
+    var getSetMinute = makeGetSet('Minutes', false);
+
+    // FORMATTING
+
+    addFormatToken('s', ['ss', 2], 0, 'second');
+
+    // ALIASES
+
+    addUnitAlias('second', 's');
+
+    // PRIORITY
+
+    addUnitPriority('second', 15);
+
+    // PARSING
+
+    addRegexToken('s',  match1to2);
+    addRegexToken('ss', match1to2, match2);
+    addParseToken(['s', 'ss'], SECOND);
+
+    // MOMENTS
+
+    var getSetSecond = makeGetSet('Seconds', false);
+
+    // FORMATTING
+
+    addFormatToken('S', 0, 0, function () {
+        return ~~(this.millisecond() / 100);
+    });
+
+    addFormatToken(0, ['SS', 2], 0, function () {
+        return ~~(this.millisecond() / 10);
+    });
+
+    addFormatToken(0, ['SSS', 3], 0, 'millisecond');
+    addFormatToken(0, ['SSSS', 4], 0, function () {
+        return this.millisecond() * 10;
+    });
+    addFormatToken(0, ['SSSSS', 5], 0, function () {
+        return this.millisecond() * 100;
+    });
+    addFormatToken(0, ['SSSSSS', 6], 0, function () {
+        return this.millisecond() * 1000;
+    });
+    addFormatToken(0, ['SSSSSSS', 7], 0, function () {
+        return this.millisecond() * 10000;
+    });
+    addFormatToken(0, ['SSSSSSSS', 8], 0, function () {
+        return this.millisecond() * 100000;
+    });
+    addFormatToken(0, ['SSSSSSSSS', 9], 0, function () {
+        return this.millisecond() * 1000000;
+    });
+
+
+    // ALIASES
+
+    addUnitAlias('millisecond', 'ms');
+
+    // PRIORITY
+
+    addUnitPriority('millisecond', 16);
+
+    // PARSING
+
+    addRegexToken('S',    match1to3, match1);
+    addRegexToken('SS',   match1to3, match2);
+    addRegexToken('SSS',  match1to3, match3);
+
+    var token;
+    for (token = 'SSSS'; token.length <= 9; token += 'S') {
+        addRegexToken(token, matchUnsigned);
+    }
+
+    function parseMs(input, array) {
+        array[MILLISECOND] = toInt(('0.' + input) * 1000);
+    }
+
+    for (token = 'S'; token.length <= 9; token += 'S') {
+        addParseToken(token, parseMs);
+    }
+    // MOMENTS
+
+    var getSetMillisecond = makeGetSet('Milliseconds', false);
+
+    // FORMATTING
+
+    addFormatToken('z',  0, 0, 'zoneAbbr');
+    addFormatToken('zz', 0, 0, 'zoneName');
+
+    // MOMENTS
+
+    function getZoneAbbr () {
+        return this._isUTC ? 'UTC' : '';
+    }
+
+    function getZoneName () {
+        return this._isUTC ? 'Coordinated Universal Time' : '';
+    }
+
+    var momentPrototype__proto = Moment.prototype;
+
+    momentPrototype__proto.add               = add_subtract__add;
+    momentPrototype__proto.calendar          = moment_calendar__calendar;
+    momentPrototype__proto.clone             = clone;
+    momentPrototype__proto.diff              = diff;
+    momentPrototype__proto.endOf             = endOf;
+    momentPrototype__proto.format            = format;
+    momentPrototype__proto.from              = from;
+    momentPrototype__proto.fromNow           = fromNow;
+    momentPrototype__proto.to                = to;
+    momentPrototype__proto.toNow             = toNow;
+    momentPrototype__proto.get               = stringGet;
+    momentPrototype__proto.invalidAt         = invalidAt;
+    momentPrototype__proto.isAfter           = isAfter;
+    momentPrototype__proto.isBefore          = isBefore;
+    momentPrototype__proto.isBetween         = isBetween;
+    momentPrototype__proto.isSame            = isSame;
+    momentPrototype__proto.isSameOrAfter     = isSameOrAfter;
+    momentPrototype__proto.isSameOrBefore    = isSameOrBefore;
+    momentPrototype__proto.isValid           = moment_valid__isValid;
+    momentPrototype__proto.lang              = lang;
+    momentPrototype__proto.locale            = locale;
+    momentPrototype__proto.localeData        = localeData;
+    momentPrototype__proto.max               = prototypeMax;
+    momentPrototype__proto.min               = prototypeMin;
+    momentPrototype__proto.parsingFlags      = parsingFlags;
+    momentPrototype__proto.set               = stringSet;
+    momentPrototype__proto.startOf           = startOf;
+    momentPrototype__proto.subtract          = add_subtract__subtract;
+    momentPrototype__proto.toArray           = toArray;
+    momentPrototype__proto.toObject          = toObject;
+    momentPrototype__proto.toDate            = toDate;
+    momentPrototype__proto.toISOString       = moment_format__toISOString;
+    momentPrototype__proto.toJSON            = toJSON;
+    momentPrototype__proto.toString          = toString;
+    momentPrototype__proto.unix              = unix;
+    momentPrototype__proto.valueOf           = to_type__valueOf;
+    momentPrototype__proto.creationData      = creationData;
+
+    // Year
+    momentPrototype__proto.year       = getSetYear;
+    momentPrototype__proto.isLeapYear = getIsLeapYear;
+
+    // Week Year
+    momentPrototype__proto.weekYear    = getSetWeekYear;
+    momentPrototype__proto.isoWeekYear = getSetISOWeekYear;
+
+    // Quarter
+    momentPrototype__proto.quarter = momentPrototype__proto.quarters = getSetQuarter;
+
+    // Month
+    momentPrototype__proto.month       = getSetMonth;
+    momentPrototype__proto.daysInMonth = getDaysInMonth;
+
+    // Week
+    momentPrototype__proto.week           = momentPrototype__proto.weeks        = getSetWeek;
+    momentPrototype__proto.isoWeek        = momentPrototype__proto.isoWeeks     = getSetISOWeek;
+    momentPrototype__proto.weeksInYear    = getWeeksInYear;
+    momentPrototype__proto.isoWeeksInYear = getISOWeeksInYear;
+
+    // Day
+    momentPrototype__proto.date       = getSetDayOfMonth;
+    momentPrototype__proto.day        = momentPrototype__proto.days             = getSetDayOfWeek;
+    momentPrototype__proto.weekday    = getSetLocaleDayOfWeek;
+    momentPrototype__proto.isoWeekday = getSetISODayOfWeek;
+    momentPrototype__proto.dayOfYear  = getSetDayOfYear;
+
+    // Hour
+    momentPrototype__proto.hour = momentPrototype__proto.hours = getSetHour;
+
+    // Minute
+    momentPrototype__proto.minute = momentPrototype__proto.minutes = getSetMinute;
+
+    // Second
+    momentPrototype__proto.second = momentPrototype__proto.seconds = getSetSecond;
+
+    // Millisecond
+    momentPrototype__proto.millisecond = momentPrototype__proto.milliseconds = getSetMillisecond;
+
+    // Offset
+    momentPrototype__proto.utcOffset            = getSetOffset;
+    momentPrototype__proto.utc                  = setOffsetToUTC;
+    momentPrototype__proto.local                = setOffsetToLocal;
+    momentPrototype__proto.parseZone            = setOffsetToParsedOffset;
+    momentPrototype__proto.hasAlignedHourOffset = hasAlignedHourOffset;
+    momentPrototype__proto.isDST                = isDaylightSavingTime;
+    momentPrototype__proto.isLocal              = isLocal;
+    momentPrototype__proto.isUtcOffset          = isUtcOffset;
+    momentPrototype__proto.isUtc                = isUtc;
+    momentPrototype__proto.isUTC                = isUtc;
+
+    // Timezone
+    momentPrototype__proto.zoneAbbr = getZoneAbbr;
+    momentPrototype__proto.zoneName = getZoneName;
+
+    // Deprecations
+    momentPrototype__proto.dates  = deprecate('dates accessor is deprecated. Use date instead.', getSetDayOfMonth);
+    momentPrototype__proto.months = deprecate('months accessor is deprecated. Use month instead', getSetMonth);
+    momentPrototype__proto.years  = deprecate('years accessor is deprecated. Use year instead', getSetYear);
+    momentPrototype__proto.zone   = deprecate('moment().zone is deprecated, use moment().utcOffset instead. http://momentjs.com/guides/#/warnings/zone/', getSetZone);
+    momentPrototype__proto.isDSTShifted = deprecate('isDSTShifted is deprecated. See http://momentjs.com/guides/#/warnings/dst-shifted/ for more information', isDaylightSavingTimeShifted);
+
+    var momentPrototype = momentPrototype__proto;
+
+    function moment__createUnix (input) {
+        return local__createLocal(input * 1000);
+    }
+
+    function moment__createInZone () {
+        return local__createLocal.apply(null, arguments).parseZone();
+    }
+
+    function preParsePostFormat (string) {
+        return string;
+    }
+
+    var prototype__proto = Locale.prototype;
+
+    prototype__proto.calendar        = locale_calendar__calendar;
+    prototype__proto.longDateFormat  = longDateFormat;
+    prototype__proto.invalidDate     = invalidDate;
+    prototype__proto.ordinal         = ordinal;
+    prototype__proto.preparse        = preParsePostFormat;
+    prototype__proto.postformat      = preParsePostFormat;
+    prototype__proto.relativeTime    = relative__relativeTime;
+    prototype__proto.pastFuture      = pastFuture;
+    prototype__proto.set             = locale_set__set;
+
+    // Month
+    prototype__proto.months            =        localeMonths;
+    prototype__proto.monthsShort       =        localeMonthsShort;
+    prototype__proto.monthsParse       =        localeMonthsParse;
+    prototype__proto.monthsRegex       = monthsRegex;
+    prototype__proto.monthsShortRegex  = monthsShortRegex;
+
+    // Week
+    prototype__proto.week = localeWeek;
+    prototype__proto.firstDayOfYear = localeFirstDayOfYear;
+    prototype__proto.firstDayOfWeek = localeFirstDayOfWeek;
+
+    // Day of Week
+    prototype__proto.weekdays       =        localeWeekdays;
+    prototype__proto.weekdaysMin    =        localeWeekdaysMin;
+    prototype__proto.weekdaysShort  =        localeWeekdaysShort;
+    prototype__proto.weekdaysParse  =        localeWeekdaysParse;
+
+    prototype__proto.weekdaysRegex       =        weekdaysRegex;
+    prototype__proto.weekdaysShortRegex  =        weekdaysShortRegex;
+    prototype__proto.weekdaysMinRegex    =        weekdaysMinRegex;
+
+    // Hours
+    prototype__proto.isPM = localeIsPM;
+    prototype__proto.meridiem = localeMeridiem;
+
+    function lists__get (format, index, field, setter) {
+        var locale = locale_locales__getLocale();
+        var utc = create_utc__createUTC().set(setter, index);
+        return locale[field](utc, format);
+    }
+
+    function listMonthsImpl (format, index, field) {
+        if (typeof format === 'number') {
+            index = format;
+            format = undefined;
+        }
+
+        format = format || '';
+
+        if (index != null) {
+            return lists__get(format, index, field, 'month');
+        }
+
+        var i;
+        var out = [];
+        for (i = 0; i < 12; i++) {
+            out[i] = lists__get(format, i, field, 'month');
+        }
+        return out;
+    }
+
+    // ()
+    // (5)
+    // (fmt, 5)
+    // (fmt)
+    // (true)
+    // (true, 5)
+    // (true, fmt, 5)
+    // (true, fmt)
+    function listWeekdaysImpl (localeSorted, format, index, field) {
+        if (typeof localeSorted === 'boolean') {
+            if (typeof format === 'number') {
+                index = format;
+                format = undefined;
+            }
+
+            format = format || '';
+        } else {
+            format = localeSorted;
+            index = format;
+            localeSorted = false;
+
+            if (typeof format === 'number') {
+                index = format;
+                format = undefined;
+            }
+
+            format = format || '';
+        }
+
+        var locale = locale_locales__getLocale(),
+            shift = localeSorted ? locale._week.dow : 0;
+
+        if (index != null) {
+            return lists__get(format, (index + shift) % 7, field, 'day');
+        }
+
+        var i;
+        var out = [];
+        for (i = 0; i < 7; i++) {
+            out[i] = lists__get(format, (i + shift) % 7, field, 'day');
+        }
+        return out;
+    }
+
+    function lists__listMonths (format, index) {
+        return listMonthsImpl(format, index, 'months');
+    }
+
+    function lists__listMonthsShort (format, index) {
+        return listMonthsImpl(format, index, 'monthsShort');
+    }
+
+    function lists__listWeekdays (localeSorted, format, index) {
+        return listWeekdaysImpl(localeSorted, format, index, 'weekdays');
+    }
+
+    function lists__listWeekdaysShort (localeSorted, format, index) {
+        return listWeekdaysImpl(localeSorted, format, index, 'weekdaysShort');
+    }
+
+    function lists__listWeekdaysMin (localeSorted, format, index) {
+        return listWeekdaysImpl(localeSorted, format, index, 'weekdaysMin');
+    }
+
+    locale_locales__getSetGlobalLocale('en', {
+        ordinalParse: /\d{1,2}(th|st|nd|rd)/,
+        ordinal : function (number) {
+            var b = number % 10,
+                output = (toInt(number % 100 / 10) === 1) ? 'th' :
+                (b === 1) ? 'st' :
+                (b === 2) ? 'nd' :
+                (b === 3) ? 'rd' : 'th';
+            return number + output;
+        }
+    });
+
+    // Side effect imports
+    utils_hooks__hooks.lang = deprecate('moment.lang is deprecated. Use moment.locale instead.', locale_locales__getSetGlobalLocale);
+    utils_hooks__hooks.langData = deprecate('moment.langData is deprecated. Use moment.localeData instead.', locale_locales__getLocale);
+
+    var mathAbs = Math.abs;
+
+    function duration_abs__abs () {
+        var data           = this._data;
+
+        this._milliseconds = mathAbs(this._milliseconds);
+        this._days         = mathAbs(this._days);
+        this._months       = mathAbs(this._months);
+
+        data.milliseconds  = mathAbs(data.milliseconds);
+        data.seconds       = mathAbs(data.seconds);
+        data.minutes       = mathAbs(data.minutes);
+        data.hours         = mathAbs(data.hours);
+        data.months        = mathAbs(data.months);
+        data.years         = mathAbs(data.years);
+
+        return this;
+    }
+
+    function duration_add_subtract__addSubtract (duration, input, value, direction) {
+        var other = create__createDuration(input, value);
+
+        duration._milliseconds += direction * other._milliseconds;
+        duration._days         += direction * other._days;
+        duration._months       += direction * other._months;
+
+        return duration._bubble();
+    }
+
+    // supports only 2.0-style add(1, 's') or add(duration)
+    function duration_add_subtract__add (input, value) {
+        return duration_add_subtract__addSubtract(this, input, value, 1);
+    }
+
+    // supports only 2.0-style subtract(1, 's') or subtract(duration)
+    function duration_add_subtract__subtract (input, value) {
+        return duration_add_subtract__addSubtract(this, input, value, -1);
+    }
+
+    function absCeil (number) {
+        if (number < 0) {
+            return Math.floor(number);
+        } else {
+            return Math.ceil(number);
+        }
+    }
+
+    function bubble () {
+        var milliseconds = this._milliseconds;
+        var days         = this._days;
+        var months       = this._months;
+        var data         = this._data;
+        var seconds, minutes, hours, years, monthsFromDays;
+
+        // if we have a mix of positive and negative values, bubble down first
+        // check: https://github.com/moment/moment/issues/2166
+        if (!((milliseconds >= 0 && days >= 0 && months >= 0) ||
+                (milliseconds <= 0 && days <= 0 && months <= 0))) {
+            milliseconds += absCeil(monthsToDays(months) + days) * 864e5;
+            days = 0;
+            months = 0;
+        }
+
+        // The following code bubbles up values, see the tests for
+        // examples of what that means.
+        data.milliseconds = milliseconds % 1000;
+
+        seconds           = absFloor(milliseconds / 1000);
+        data.seconds      = seconds % 60;
+
+        minutes           = absFloor(seconds / 60);
+        data.minutes      = minutes % 60;
+
+        hours             = absFloor(minutes / 60);
+        data.hours        = hours % 24;
+
+        days += absFloor(hours / 24);
+
+        // convert days to months
+        monthsFromDays = absFloor(daysToMonths(days));
+        months += monthsFromDays;
+        days -= absCeil(monthsToDays(monthsFromDays));
+
+        // 12 months -> 1 year
+        years = absFloor(months / 12);
+        months %= 12;
+
+        data.days   = days;
+        data.months = months;
+        data.years  = years;
+
+        return this;
+    }
+
+    function daysToMonths (days) {
+        // 400 years have 146097 days (taking into account leap year rules)
+        // 400 years have 12 months === 4800
+        return days * 4800 / 146097;
+    }
+
+    function monthsToDays (months) {
+        // the reverse of daysToMonths
+        return months * 146097 / 4800;
+    }
+
+    function as (units) {
+        var days;
+        var months;
+        var milliseconds = this._milliseconds;
+
+        units = normalizeUnits(units);
+
+        if (units === 'month' || units === 'year') {
+            days   = this._days   + milliseconds / 864e5;
+            months = this._months + daysToMonths(days);
+            return units === 'month' ? months : months / 12;
+        } else {
+            // handle milliseconds separately because of floating point math errors (issue #1867)
+            days = this._days + Math.round(monthsToDays(this._months));
+            switch (units) {
+                case 'week'   : return days / 7     + milliseconds / 6048e5;
+                case 'day'    : return days         + milliseconds / 864e5;
+                case 'hour'   : return days * 24    + milliseconds / 36e5;
+                case 'minute' : return days * 1440  + milliseconds / 6e4;
+                case 'second' : return days * 86400 + milliseconds / 1000;
+                // Math.floor prevents floating point math errors here
+                case 'millisecond': return Math.floor(days * 864e5) + milliseconds;
+                default: throw new Error('Unknown unit ' + units);
+            }
+        }
+    }
+
+    // TODO: Use this.as('ms')?
+    function duration_as__valueOf () {
+        return (
+            this._milliseconds +
+            this._days * 864e5 +
+            (this._months % 12) * 2592e6 +
+            toInt(this._months / 12) * 31536e6
+        );
+    }
+
+    function makeAs (alias) {
+        return function () {
+            return this.as(alias);
+        };
+    }
+
+    var asMilliseconds = makeAs('ms');
+    var asSeconds      = makeAs('s');
+    var asMinutes      = makeAs('m');
+    var asHours        = makeAs('h');
+    var asDays         = makeAs('d');
+    var asWeeks        = makeAs('w');
+    var asMonths       = makeAs('M');
+    var asYears        = makeAs('y');
+
+    function duration_get__get (units) {
+        units = normalizeUnits(units);
+        return this[units + 's']();
+    }
+
+    function makeGetter(name) {
+        return function () {
+            return this._data[name];
+        };
+    }
+
+    var milliseconds = makeGetter('milliseconds');
+    var seconds      = makeGetter('seconds');
+    var minutes      = makeGetter('minutes');
+    var hours        = makeGetter('hours');
+    var days         = makeGetter('days');
+    var months       = makeGetter('months');
+    var years        = makeGetter('years');
+
+    function weeks () {
+        return absFloor(this.days() / 7);
+    }
+
+    var round = Math.round;
+    var thresholds = {
+        s: 45,  // seconds to minute
+        m: 45,  // minutes to hour
+        h: 22,  // hours to day
+        d: 26,  // days to month
+        M: 11   // months to year
+    };
+
+    // helper function for moment.fn.from, moment.fn.fromNow, and moment.duration.fn.humanize
+    function substituteTimeAgo(string, number, withoutSuffix, isFuture, locale) {
+        return locale.relativeTime(number || 1, !!withoutSuffix, string, isFuture);
+    }
+
+    function duration_humanize__relativeTime (posNegDuration, withoutSuffix, locale) {
+        var duration = create__createDuration(posNegDuration).abs();
+        var seconds  = round(duration.as('s'));
+        var minutes  = round(duration.as('m'));
+        var hours    = round(duration.as('h'));
+        var days     = round(duration.as('d'));
+        var months   = round(duration.as('M'));
+        var years    = round(duration.as('y'));
+
+        var a = seconds < thresholds.s && ['s', seconds]  ||
+                minutes <= 1           && ['m']           ||
+                minutes < thresholds.m && ['mm', minutes] ||
+                hours   <= 1           && ['h']           ||
+                hours   < thresholds.h && ['hh', hours]   ||
+                days    <= 1           && ['d']           ||
+                days    < thresholds.d && ['dd', days]    ||
+                months  <= 1           && ['M']           ||
+                months  < thresholds.M && ['MM', months]  ||
+                years   <= 1           && ['y']           || ['yy', years];
+
+        a[2] = withoutSuffix;
+        a[3] = +posNegDuration > 0;
+        a[4] = locale;
+        return substituteTimeAgo.apply(null, a);
+    }
+
+    // This function allows you to set the rounding function for relative time strings
+    function duration_humanize__getSetRelativeTimeRounding (roundingFunction) {
+        if (roundingFunction === undefined) {
+            return round;
+        }
+        if (typeof(roundingFunction) === 'function') {
+            round = roundingFunction;
+            return true;
+        }
+        return false;
+    }
+
+    // This function allows you to set a threshold for relative time strings
+    function duration_humanize__getSetRelativeTimeThreshold (threshold, limit) {
+        if (thresholds[threshold] === undefined) {
+            return false;
+        }
+        if (limit === undefined) {
+            return thresholds[threshold];
+        }
+        thresholds[threshold] = limit;
+        return true;
+    }
+
+    function humanize (withSuffix) {
+        var locale = this.localeData();
+        var output = duration_humanize__relativeTime(this, !withSuffix, locale);
+
+        if (withSuffix) {
+            output = locale.pastFuture(+this, output);
+        }
+
+        return locale.postformat(output);
+    }
+
+    var iso_string__abs = Math.abs;
+
+    function iso_string__toISOString() {
+        // for ISO strings we do not use the normal bubbling rules:
+        //  * milliseconds bubble up until they become hours
+        //  * days do not bubble at all
+        //  * months bubble up until they become years
+        // This is because there is no context-free conversion between hours and days
+        // (think of clock changes)
+        // and also not between days and months (28-31 days per month)
+        var seconds = iso_string__abs(this._milliseconds) / 1000;
+        var days         = iso_string__abs(this._days);
+        var months       = iso_string__abs(this._months);
+        var minutes, hours, years;
+
+        // 3600 seconds -> 60 minutes -> 1 hour
+        minutes           = absFloor(seconds / 60);
+        hours             = absFloor(minutes / 60);
+        seconds %= 60;
+        minutes %= 60;
+
+        // 12 months -> 1 year
+        years  = absFloor(months / 12);
+        months %= 12;
+
+
+        // inspired by https://github.com/dordille/moment-isoduration/blob/master/moment.isoduration.js
+        var Y = years;
+        var M = months;
+        var D = days;
+        var h = hours;
+        var m = minutes;
+        var s = seconds;
+        var total = this.asSeconds();
+
+        if (!total) {
+            // this is the same as C#'s (Noda) and python (isodate)...
+            // but not other JS (goog.date)
+            return 'P0D';
+        }
+
+        return (total < 0 ? '-' : '') +
+            'P' +
+            (Y ? Y + 'Y' : '') +
+            (M ? M + 'M' : '') +
+            (D ? D + 'D' : '') +
+            ((h || m || s) ? 'T' : '') +
+            (h ? h + 'H' : '') +
+            (m ? m + 'M' : '') +
+            (s ? s + 'S' : '');
+    }
+
+    var duration_prototype__proto = Duration.prototype;
+
+    duration_prototype__proto.abs            = duration_abs__abs;
+    duration_prototype__proto.add            = duration_add_subtract__add;
+    duration_prototype__proto.subtract       = duration_add_subtract__subtract;
+    duration_prototype__proto.as             = as;
+    duration_prototype__proto.asMilliseconds = asMilliseconds;
+    duration_prototype__proto.asSeconds      = asSeconds;
+    duration_prototype__proto.asMinutes      = asMinutes;
+    duration_prototype__proto.asHours        = asHours;
+    duration_prototype__proto.asDays         = asDays;
+    duration_prototype__proto.asWeeks        = asWeeks;
+    duration_prototype__proto.asMonths       = asMonths;
+    duration_prototype__proto.asYears        = asYears;
+    duration_prototype__proto.valueOf        = duration_as__valueOf;
+    duration_prototype__proto._bubble        = bubble;
+    duration_prototype__proto.get            = duration_get__get;
+    duration_prototype__proto.milliseconds   = milliseconds;
+    duration_prototype__proto.seconds        = seconds;
+    duration_prototype__proto.minutes        = minutes;
+    duration_prototype__proto.hours          = hours;
+    duration_prototype__proto.days           = days;
+    duration_prototype__proto.weeks          = weeks;
+    duration_prototype__proto.months         = months;
+    duration_prototype__proto.years          = years;
+    duration_prototype__proto.humanize       = humanize;
+    duration_prototype__proto.toISOString    = iso_string__toISOString;
+    duration_prototype__proto.toString       = iso_string__toISOString;
+    duration_prototype__proto.toJSON         = iso_string__toISOString;
+    duration_prototype__proto.locale         = locale;
+    duration_prototype__proto.localeData     = localeData;
+
+    // Deprecations
+    duration_prototype__proto.toIsoString = deprecate('toIsoString() is deprecated. Please use toISOString() instead (notice the capitals)', iso_string__toISOString);
+    duration_prototype__proto.lang = lang;
+
+    // Side effect imports
+
+    // FORMATTING
+
+    addFormatToken('X', 0, 0, 'unix');
+    addFormatToken('x', 0, 0, 'valueOf');
+
+    // PARSING
+
+    addRegexToken('x', matchSigned);
+    addRegexToken('X', matchTimestamp);
+    addParseToken('X', function (input, array, config) {
+        config._d = new Date(parseFloat(input, 10) * 1000);
+    });
+    addParseToken('x', function (input, array, config) {
+        config._d = new Date(toInt(input));
+    });
+
+    // Side effect imports
+
+
+    utils_hooks__hooks.version = '2.15.1';
+
+    setHookCallback(local__createLocal);
+
+    utils_hooks__hooks.fn                    = momentPrototype;
+    utils_hooks__hooks.min                   = min;
+    utils_hooks__hooks.max                   = max;
+    utils_hooks__hooks.now                   = now;
+    utils_hooks__hooks.utc                   = create_utc__createUTC;
+    utils_hooks__hooks.unix                  = moment__createUnix;
+    utils_hooks__hooks.months                = lists__listMonths;
+    utils_hooks__hooks.isDate                = isDate;
+    utils_hooks__hooks.locale                = locale_locales__getSetGlobalLocale;
+    utils_hooks__hooks.invalid               = valid__createInvalid;
+    utils_hooks__hooks.duration              = create__createDuration;
+    utils_hooks__hooks.isMoment              = isMoment;
+    utils_hooks__hooks.weekdays              = lists__listWeekdays;
+    utils_hooks__hooks.parseZone             = moment__createInZone;
+    utils_hooks__hooks.localeData            = locale_locales__getLocale;
+    utils_hooks__hooks.isDuration            = isDuration;
+    utils_hooks__hooks.monthsShort           = lists__listMonthsShort;
+    utils_hooks__hooks.weekdaysMin           = lists__listWeekdaysMin;
+    utils_hooks__hooks.defineLocale          = defineLocale;
+    utils_hooks__hooks.updateLocale          = updateLocale;
+    utils_hooks__hooks.locales               = locale_locales__listLocales;
+    utils_hooks__hooks.weekdaysShort         = lists__listWeekdaysShort;
+    utils_hooks__hooks.normalizeUnits        = normalizeUnits;
+    utils_hooks__hooks.relativeTimeRounding = duration_humanize__getSetRelativeTimeRounding;
+    utils_hooks__hooks.relativeTimeThreshold = duration_humanize__getSetRelativeTimeThreshold;
+    utils_hooks__hooks.calendarFormat        = getCalendarFormat;
+    utils_hooks__hooks.prototype             = momentPrototype;
+
+    var _moment = utils_hooks__hooks;
+
+    return _moment;
+
+}));
+},{}],4:[function(require,module,exports){
 'use strict';
 
 var assert = require('chai').assert;
 var E = require('linq');
-var dropElement = require('./src/utils').dropElement;
-var ArrayIterator = require('./src/iterators/array');
-var ConcatIterator = require('./src/iterators/concat');
 var SelectIterator = require('./src/iterators/select');
 var MultiIterator = require('./src/iterators/multi');
 require('sugar');
 var BabyParse = require('babyparse');
+var extend = require('extend');
 
 var DataFrame = require('./src/dataframe');
 var Series = require('./src/series');
-var Index = require('./src/index');
 var E = require('linq');
+var zip = require('./src/zip');
 
 //
 // Records plugins that have been registered.
@@ -3062,9 +7295,19 @@ var registeredPlugins = {};
  */
 var dataForge = {
 	
+	/**
+	 * Constructor for DataFrame.
+	 *
+	 * @param {object|array} config|values - Specifies content and configuration for the DataFrame.
+	 */
 	DataFrame: DataFrame,
+
+	/**
+	 * Constructor for Series.
+	 *
+	 * @param {object|array} config|values - Specifies content and configuration for the Series.
+	 */
 	Series: Series,
-	Index: Index,
 
 	/**
 	 * Install a plugin in the dataForge namespace.
@@ -3085,23 +7328,39 @@ var dataForge = {
 
 
 	/**
-	 * Deserialize a data frame from a JSON text string.
+	 * Deserialize a DataFrame from a JSON text string.
+	 *
+	 * @param {string} jsonTextString - The JSON text to deserialize.
+	 * @param {config} [config] - Optional configuration option to pass to the DataFrame.
 	 */
-	fromJSON: function (jsonTextString) {
+	fromJSON: function (jsonTextString, config) {
+		
 		assert.isString(jsonTextString, "Expected 'jsonTextString' parameter to 'dataForge.fromJSON' to be a string containing data encoded in the JSON format.");
 
-		return new DataFrame({
-				rows: JSON.parse(jsonTextString)
-			});
+		if (config) {
+			assert.isObject(config, "Expected 'config' parameter to 'dataForge.fromJSON' to be an object with configuration to pass to the DataFrame.");
+		}
+
+		var baseConfig = {
+			values: JSON.parse(jsonTextString)
+		};
+
+		var dataFrameConfig = extend({}, config || {}, baseConfig);
+		return new DataFrame(dataFrameConfig);
 	},
 
 	//
-	// Deserialize a data from a CSV text string.
+	// Deserialize a DataFrame from a CSV text string.
 	//
 	fromCSV: function (csvTextString, config) {
 		assert.isString(csvTextString, "Expected 'csvTextString' parameter to 'dataForge.fromCSV' to be a string containing data encoded in the CSV format.");
 
-		var parsed = BabyParse.parse(csvTextString, config);
+		if (config) {
+			assert.isObject(config, "Expected 'config' parameter to 'dataForge.fromJSON' to be an object with configuration to pass to the DataFrame.");
+		}
+
+		var csvConfig = extend({}, config);
+		var parsed = BabyParse.parse(csvTextString, csvConfig);
 		var rows = parsed.data;
 		
 		/* Old csv parsing.
@@ -3131,7 +7390,7 @@ var dataForge = {
 		*/
 
 		if (rows.length === 0) {
-			return new dataForge.DataFrame({ columnNames: [], rows: [] });
+			return new dataForge.DataFrame({ columnNames: [], values: [] });
 		}
 				
 		var columnNames = E.from(E.from(rows).first())
@@ -3150,122 +7409,28 @@ var dataForge = {
 					.toArray()
 			})
 			.toArray();
-		return new dataForge.DataFrame({
-				columnNames: columnNames, 
-				rows: remaining
-			});
-	},
 
-	/**
-	 * Merge data-frames by index or a particular column.
-	 * 
-	 * @param {DataFrame} leftDataFrame - One data frame to merge.
-	 * @param {DataFrame} rightDataFrame - The other data frame to merge.
-	 * @param {string} [columnName] - The name of the column to merge on. Optional, when not specified merge is based on the index.
-	 */
-	merge: function (leftDataFrame, rightDataFrame, columnName) {
-		assert.isObject(leftDataFrame, "Expected 'leftDataFrame' parameter to 'merge' to be an object.");
-		assert.isObject(rightDataFrame, "Expected 'rightDataFrame' parameter to 'merge' to be an object.");
-
-		if (columnName) {
-			assert.isString(columnName, "Expected optional 'columnName' parameter to 'merge' to be a string.");
-		}
-
-		var leftColumnIndex = leftDataFrame.getColumnIndex(columnName);
-		if (leftColumnIndex < 0) {
-			throw new Error("Column with name '" + columnName + "' doesn't exist in 'leftDataFrame'.");
-		}
-
-		var rightColumnIndex = rightDataFrame.getColumnIndex(columnName);
-		if (rightColumnIndex < 0) {
-			throw new Error("Column with name '" + columnName + "' doesn't exist in 'rightColumnIndex'.");
-		}
-
-		var leftRows = leftDataFrame.toValues();
-		var rightRows = rightDataFrame.toValues();
-
-		var mergedColumnNames = [columnName]
-			.concat(dropElement(leftDataFrame.getColumnNames(), leftColumnIndex))
-			.concat(dropElement(rightDataFrame.getColumnNames(), rightColumnIndex));
-
-		var rightMap = E.from(rightRows)
-			.groupBy(function (rightRow) {
-				return rightRow[rightColumnIndex];
-			})
-			.toObject(
-				function (group) {
-					return group.key();
-				},
-				function (group) {
-					return group.getSource();
-				}
-			);
-
-		var mergedValues = E.from(leftRows) // Merge values, drop index.
-			.selectMany(function (leftRow) {
-				var rightRows = rightMap[leftRow[leftColumnIndex]] || [];
-				return E.from(rightRows)
-					.select(function (rightRow) {
-						var combined = [leftRow[leftColumnIndex]];
-						
-						for (var i = 0; i < leftRow.length; ++i) {
-							if (i !== leftColumnIndex) {
-								combined.push(leftRow[i]);
-							}
-						}
-
-						for (var i = 0; i < rightRow.length; ++i) {
-							if (i !== rightColumnIndex) {
-								combined.push(rightRow[i]);
-							}
-						}
-
-						return combined;
-					});
-			})
-			.toArray();
-
-		return new DataFrame({
-			columnNames: mergedColumnNames,
-			rows: function () {
-				return new ArrayIterator(mergedValues);
-			},
-		});
-	},
-
-	/**
-	 * Concatenate multiple data frames into a single.
-	 *
-	 * @param {array} dataFrames - Array of data frames to concatenate.
-	 */
-	concat: function (dataFrames) {
-		assert.isArray(dataFrames, "Expected 'dataFrames' parameter to 'dataForge.concat' to be an array of data frames.");
-
-		var concatenateColumns = function () {
-			return E.from(dataFrames)
-				.selectMany(function (dataFrame) {
-					return dataFrame.getColumnNames();
-				})
-				.distinct()
-				.toArray();
+		var baseConfig = {
+			columnNames: columnNames, 
+			values: remaining,
 		};
-
-		return new DataFrame({
-			columnNames: concatenateColumns(),
-			iterable: function () {
-				var concatenatedColumns = concatenateColumns();
-				var iterators = E.from(dataFrames)
-					.select(function (dataFrame) {
-						return dataFrame.remapColumns(concatenatedColumns);
-					})
-					.select(function (dataFrame) {
-						return dataFrame.getIterator();
-					})						
-					.toArray()
-				return new ConcatIterator(iterators);
-			},
-		});
+		var dataFrameConfig = extend({}, config || {}, baseConfig);
+		return new dataForge.DataFrame(dataFrameConfig);
 	},
+
+	/**
+	 * Concatenate multiple dataframes into a single dataframe.
+	 *
+	 * @param {array} dataFrames - Array of dataframes to concatenate. 
+	 */
+	concatDataFrames: require('./src/concat-dataframes'),
+
+	/**
+	 * Concatenate multiple series into a single series.
+	 * 
+	 * @param {array} series - Array of series to concatenate. 
+	 */
+	concatSeries: require('./src/concat-series'),
 
 	/**
 	 * Generate a series from a range of numbers.
@@ -3313,7 +7478,7 @@ var dataForge = {
 				})
 				.toArray(),
 
-			rows: function () {
+			values: function () {
 				var rowIndex = 0;
 				var nextValue = start;
 				var curRow = undefined;
@@ -3341,91 +7506,29 @@ var dataForge = {
 		})
 	},
 
-	/*
+	/**
 	 * Zip together multiple series to create a new series.
 	 *
 	 * @param {array} series - Array of series to zip together.
 	 * @param {function} selector - Selector function that produces a new series based on the input series.
 	 */
 	zipSeries: function (series, selector) {
-
-		assert.isArray(series, "Expected 'series' parameter to zipSeries to be an array of Series objects.");
-		assert.isFunction(selector, "Expected 'selector' parameter to zipSeries to be a function.");
-
-		//todo: make this lazy.
-
-		var seriesToZip = E.from(series)
-			.select(function (series) {
-				return series.toValues();
-			})
-			.toArray();
-
-		var length = E.from(seriesToZip).select(function (values) { 
-				return values.length; 
-			})
-			.min();
-
-		var output = [];
-
-		for (var i = 0; i < length; ++i) {
-			var curElements = E.from(seriesToZip)
-				.select(function (values) {
-					return values[i];
-				})
-				.toArray();
-			output.push(selector(curElements));
-		}
-
-		return new Series({
-			index: series[0].getIndex(),
-			values: output,
-		});
+		return zip(series, selector, Series);
 	},
 
-	/*
+	/**
 	 * Zip together multiple data-frames to create a new data-frame.
 	 *
 	 * @param {array} dataFrames - Array of data-frames to zip together.
 	 * @param {function} selector - Selector function that produces a new data-frame based on the input data-frames.
 	 */
 	zipDataFrames: function (dataFrames, selector) {
-
-		assert.isArray(dataFrames, "Expected 'dataFrames' parameter to zipDataFrames to be an array of Series objects.");
-		assert.isFunction(selector, "Expected 'selector' parameter to zipDataFrames to be a function.");
-
-		//todo: make this lazy.
-
-		var dataFrameContents = E.from(dataFrames)
-			.select(function (dataFrame) {
-				return dataFrame.toObjects();
-			})
-			.toArray();
-
-		var length = E.from(dataFrameContents).select(function (objects) { 
-				return objects.length; 
-			})
-			.min();
-
-		var output = [];
-
-		for (var i = 0; i < length; ++i) {
-			var curElements = E.from(dataFrameContents)
-				.select(function (objects) {
-					return objects[i];
-				})
-				.toArray();
-			output.push(selector(curElements));
-		}
-
-		return new DataFrame({
-			index: dataFrames[0].getIndex(),
-			rows: output,
-		});
-	},	
+		return zip(dataFrames, selector, DataFrame);
+	},
 };
 
 module.exports = dataForge;
-},{"./src/dataframe":46,"./src/index":47,"./src/iterators/array":48,"./src/iterators/concat":49,"./src/iterators/multi":52,"./src/iterators/select":55,"./src/series":62,"./src/utils":63,"babyparse":4,"chai":5,"linq":43,"sugar":45}],4:[function(require,module,exports){
+},{"./src/concat-dataframes":47,"./src/concat-series":48,"./src/dataframe":49,"./src/iterators/multi":69,"./src/iterators/select":72,"./src/series":79,"./src/zip":81,"babyparse":5,"chai":6,"extend":43,"linq":44,"sugar":46}],5:[function(require,module,exports){
 /*
 	Baby Parse
 	v0.4.1
@@ -4272,10 +8375,10 @@ module.exports = dataForge;
 
 })(typeof window !== 'undefined' ? window : this);
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = require('./lib/chai');
 
-},{"./lib/chai":6}],6:[function(require,module,exports){
+},{"./lib/chai":7}],7:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -4370,7 +8473,7 @@ exports.use(should);
 var assert = require('./chai/interface/assert');
 exports.use(assert);
 
-},{"./chai/assertion":7,"./chai/config":8,"./chai/core/assertions":9,"./chai/interface/assert":10,"./chai/interface/expect":11,"./chai/interface/should":12,"./chai/utils":26,"assertion-error":34}],7:[function(require,module,exports){
+},{"./chai/assertion":8,"./chai/config":9,"./chai/core/assertions":10,"./chai/interface/assert":11,"./chai/interface/expect":12,"./chai/interface/should":13,"./chai/utils":27,"assertion-error":35}],8:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -4503,7 +8606,7 @@ module.exports = function (_chai, util) {
   });
 };
 
-},{"./config":8}],8:[function(require,module,exports){
+},{"./config":9}],9:[function(require,module,exports){
 module.exports = {
 
   /**
@@ -4560,7 +8663,7 @@ module.exports = {
 
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -6378,7 +10481,7 @@ module.exports = function (chai, _) {
   });
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -7929,7 +12032,7 @@ module.exports = function (chai, util) {
   ('isNotFrozen', 'notFrozen');
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -7964,7 +12067,7 @@ module.exports = function (chai, util) {
   };
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8064,7 +12167,7 @@ module.exports = function (chai, util) {
   chai.Should = loadShould;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /*!
  * Chai - addChainingMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8177,7 +12280,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   });
 };
 
-},{"../config":8,"./flag":17,"./transferFlags":33}],14:[function(require,module,exports){
+},{"../config":9,"./flag":18,"./transferFlags":34}],15:[function(require,module,exports){
 /*!
  * Chai - addMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8222,7 +12325,7 @@ module.exports = function (ctx, name, method) {
   };
 };
 
-},{"../config":8,"./flag":17}],15:[function(require,module,exports){
+},{"../config":9,"./flag":18}],16:[function(require,module,exports){
 /*!
  * Chai - addProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8271,7 +12374,7 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{"../config":8,"./flag":17}],16:[function(require,module,exports){
+},{"../config":9,"./flag":18}],17:[function(require,module,exports){
 /*!
  * Chai - expectTypes utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8314,7 +12417,7 @@ module.exports = function (obj, types) {
   }
 };
 
-},{"./flag":17,"assertion-error":34,"type-detect":39}],17:[function(require,module,exports){
+},{"./flag":18,"assertion-error":35,"type-detect":40}],18:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8348,7 +12451,7 @@ module.exports = function (obj, key, value) {
   }
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*!
  * Chai - getActual utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8368,7 +12471,7 @@ module.exports = function (obj, args) {
   return args.length > 4 ? args[4] : obj._obj;
 };
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*!
  * Chai - getEnumerableProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8395,7 +12498,7 @@ module.exports = function getEnumerableProperties(object) {
   return result;
 };
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /*!
  * Chai - message composition utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8447,7 +12550,7 @@ module.exports = function (obj, args) {
   return flagMsg ? flagMsg + ': ' + msg : msg;
 };
 
-},{"./flag":17,"./getActual":18,"./inspect":27,"./objDisplay":28}],21:[function(require,module,exports){
+},{"./flag":18,"./getActual":19,"./inspect":28,"./objDisplay":29}],22:[function(require,module,exports){
 /*!
  * Chai - getName utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8469,7 +12572,7 @@ module.exports = function (func) {
   return match && match[1] ? match[1] : "";
 };
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /*!
  * Chai - getPathInfo utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8581,7 +12684,7 @@ function _getPathValue (parsed, obj, index) {
   return res;
 }
 
-},{"./hasProperty":25}],23:[function(require,module,exports){
+},{"./hasProperty":26}],24:[function(require,module,exports){
 /*!
  * Chai - getPathValue utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8625,7 +12728,7 @@ module.exports = function(path, obj) {
   return info.value;
 }; 
 
-},{"./getPathInfo":22}],24:[function(require,module,exports){
+},{"./getPathInfo":23}],25:[function(require,module,exports){
 /*!
  * Chai - getProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8662,7 +12765,7 @@ module.exports = function getProperties(object) {
   return result;
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /*!
  * Chai - hasProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8727,7 +12830,7 @@ module.exports = function hasProperty(name, obj) {
   return name in obj;
 };
 
-},{"type-detect":39}],26:[function(require,module,exports){
+},{"type-detect":40}],27:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
@@ -8859,7 +12962,7 @@ exports.addChainableMethod = require('./addChainableMethod');
 
 exports.overwriteChainableMethod = require('./overwriteChainableMethod');
 
-},{"./addChainableMethod":13,"./addMethod":14,"./addProperty":15,"./expectTypes":16,"./flag":17,"./getActual":18,"./getMessage":20,"./getName":21,"./getPathInfo":22,"./getPathValue":23,"./hasProperty":25,"./inspect":27,"./objDisplay":28,"./overwriteChainableMethod":29,"./overwriteMethod":30,"./overwriteProperty":31,"./test":32,"./transferFlags":33,"deep-eql":35,"type-detect":39}],27:[function(require,module,exports){
+},{"./addChainableMethod":14,"./addMethod":15,"./addProperty":16,"./expectTypes":17,"./flag":18,"./getActual":19,"./getMessage":21,"./getName":22,"./getPathInfo":23,"./getPathValue":24,"./hasProperty":26,"./inspect":28,"./objDisplay":29,"./overwriteChainableMethod":30,"./overwriteMethod":31,"./overwriteProperty":32,"./test":33,"./transferFlags":34,"deep-eql":36,"type-detect":40}],28:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -9194,7 +13297,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"./getEnumerableProperties":19,"./getName":21,"./getProperties":24}],28:[function(require,module,exports){
+},{"./getEnumerableProperties":20,"./getName":22,"./getProperties":25}],29:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9245,7 +13348,7 @@ module.exports = function (obj) {
   }
 };
 
-},{"../config":8,"./inspect":27}],29:[function(require,module,exports){
+},{"../config":9,"./inspect":28}],30:[function(require,module,exports){
 /*!
  * Chai - overwriteChainableMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9300,7 +13403,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   };
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /*!
  * Chai - overwriteMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9353,7 +13456,7 @@ module.exports = function (ctx, name, method) {
   }
 };
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /*!
  * Chai - overwriteProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9409,7 +13512,7 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /*!
  * Chai - test utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9437,7 +13540,7 @@ module.exports = function (obj, args) {
   return negate ? !expr : expr;
 };
 
-},{"./flag":17}],33:[function(require,module,exports){
+},{"./flag":18}],34:[function(require,module,exports){
 /*!
  * Chai - transferFlags utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9483,7 +13586,7 @@ module.exports = function (assertion, object, includeAll) {
   }
 };
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 /*!
  * assertion-error
  * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>
@@ -9597,10 +13700,10 @@ AssertionError.prototype.toJSON = function (stack) {
   return props;
 };
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 module.exports = require('./lib/eql');
 
-},{"./lib/eql":36}],36:[function(require,module,exports){
+},{"./lib/eql":37}],37:[function(require,module,exports){
 /*!
  * deep-eql
  * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>
@@ -9859,10 +13962,10 @@ function objectEqual(a, b, m) {
   return true;
 }
 
-},{"buffer":65,"type-detect":37}],37:[function(require,module,exports){
+},{"buffer":83,"type-detect":38}],38:[function(require,module,exports){
 module.exports = require('./lib/type');
 
-},{"./lib/type":38}],38:[function(require,module,exports){
+},{"./lib/type":39}],39:[function(require,module,exports){
 /*!
  * type-detect
  * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
@@ -10006,9 +14109,9 @@ Library.prototype.test = function (obj, type) {
   }
 };
 
-},{}],39:[function(require,module,exports){
-arguments[4][37][0].apply(exports,arguments)
-},{"./lib/type":40,"dup":37}],40:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
+arguments[4][38][0].apply(exports,arguments)
+},{"./lib/type":41,"dup":38}],41:[function(require,module,exports){
 /*!
  * type-detect
  * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
@@ -10144,7 +14247,7 @@ Library.prototype.test = function(obj, type) {
   }
 };
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = Table
 
 function Table() {
@@ -10584,7 +14687,7 @@ Table.prototype.log = function() {
   console.log(this.toString())
 }
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 'use strict';
 
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -10672,9 +14775,9 @@ module.exports = function extend() {
 };
 
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
-},{"dup":2}],44:[function(require,module,exports){
+},{"dup":2}],45:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -13870,7 +17973,7 @@ arguments[4][2][0].apply(exports,arguments)
     return _moment;
 
 }));
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 (function (global){
 /*
  *  Sugar Library v1.4.1
@@ -23119,30 +27222,129 @@ Date.addLocale('zh-TW', {
 }).call(this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
+'use strict';
+
+var assert = require('chai').assert;
+var E = require('linq');
+var DataFrame = require('./dataframe');
+var MultiIterator = require('./iterators/multi');
+var ConcatIterator = require('./iterators/concat');
+var SelectIterator = require('./iterators/select');
+var extend = require('extend');
+
+/**
+ * Concatenate multiple dataframes into a single dataframe.
+ *
+ * @param {array} dataFrames - Array of data frames to concatenate.
+ */
+module.exports = function (dataFrames, options) {
+	assert.isArray(dataFrames, "Expected 'dataFrames' parameter to 'dataForge.concat' to be an array of data frames.");
+
+	if (options) {
+		assert.isObject(options, "Expected 'options' parameter to 'dataForge.concat' to be an object with config options.");
+	}
+
+	if (options && options.axis === 1) {
+		var columnNames = E.from(dataFrames)
+			.selectMany(function (dataFrame) {
+				return dataFrame.getColumnNames();
+			})
+			.toArray();
+
+		var rows = E.from(dataFrames)
+			.select(function (dataFrame) {
+				return dataFrame.toRows();
+			})
+			.toArray();
+
+		var concatenatedRows = E.from(rows)
+			.aggregate(function (prev, cur) {
+				return E.from(prev).zip(cur, function (p, c) {
+						return p.concat(c);
+					})
+					.toArray();
+			});
+
+		return new DataFrame({
+			columnNames: columnNames,
+			values: concatenatedRows
+		});
+	}
+	else {
+		var concatenatedColumnsNames = E.from(dataFrames)
+			.selectMany(function (dataFrame) {
+				return dataFrame.getColumnNames();
+			})
+			.distinct()
+			.toArray();
+
+		return new DataFrame({
+			iterable: {
+				getIterator: function () {
+					var iterators = E.from(dataFrames)
+						.select(function (dataFrame) {
+							return dataFrame.remapColumns(concatenatedColumnsNames);
+						})
+						.select(function (dataFrame) {
+							return dataFrame.getIterator();
+						})						
+						.toArray()
+					return new ConcatIterator(iterators);
+				},
+
+				getColumnNames: function () {
+					return concatenatedColumnsNames;
+				},
+			},
+		});
+	}
+};
+
+},{"./dataframe":49,"./iterators/concat":66,"./iterators/multi":69,"./iterators/select":72,"chai":6,"extend":43,"linq":44}],48:[function(require,module,exports){
+'use strict';
+
+var assert = require('chai').assert;
+var E = require('linq');
+var Series = require('./series');
+var ConcatIterator = require('./iterators/concat');
+
+/**
+ * Concatenate multiple series into a single series.
+ *
+ * @param {array} series - Array of series to concatenate.
+ */
+module.exports = function (series) {
+	assert.isArray(series, "Expected 'series' parameter to 'dataForge.concatSeries' to be an array of series.");
+
+	return new Series({
+		iterable: {
+			getIterator: function () {
+				var iterators = E.from(series)
+					.select(function (series) {
+						return series.getIterator();
+					})						
+					.toArray()
+				return new ConcatIterator(iterators);
+			},
+		},
+	});
+};
+
+},{"./iterators/concat":66,"./series":79,"chai":6,"linq":44}],49:[function(require,module,exports){
 'use strict';
 
 // 
 // Base class for data frame classes.
 //
 
-var Series = require('./series');
-var Index = require('./index');
 var ArrayIterator = require('./iterators/array');
 var MultiIterator = require('./iterators/multi');
-var PairIterator = require('./iterators/pair');
-var SkipIterator = require('./iterators/skip');
-var SkipWhileIterator = require('./iterators/skip-while');
 var BabyParse = require('babyparse');
 var SelectIterator = require('../src/iterators/select');
-var SelectManyIterator = require('../src/iterators/select-many');
-var TakeIterator = require('../src/iterators/take');
-var TakeWhileIterator = require('../src/iterators/take-while');
-var WhereIterator = require('../src/iterators/where');
-var CountIterator = require('../src/iterators/count');
-var EmptyIterator = require('../src/iterators/empty');
 var utils = require('./utils');
 var extend = require('extend');
+var inherit = require('./inherit');
 
 var assert = require('chai').assert; 
 var E = require('linq');
@@ -23179,291 +27381,260 @@ var convertRowsToObjects = function (columnNames, rowsIterator) {
 				);							
 		}
 	);
-}
+};
 
-/**
- * Constructor for DataFrame.
- *
- * @param {object} config - Specifies content and configuration for the data frame.
- */
+//
+// Determine column names from an array of rows. Column names are take from the fields in each JavaScript object.
+//
+var determineColumnNamesFromObjectRows = function (rows, considerAllRows)  {
+
+	assert.isArray(rows);
+
+	if (considerAllRows) {
+		return E.from(rows)
+			.selectMany(function (row) {
+				return Object.keys(row);
+			})
+			.distinct()
+			.toArray();
+	}
+	else {
+		if (rows.length > 0) {
+			// Just consider the first row.
+			return Object.keys(rows[0]);
+		}
+		else {
+			// Can't do this, there are no rows.
+			return [];
+		}
+	}
+};
+
+//
+// Evaluate an iterable of JavaScript objects, look at the fields and figure out column names from that.
+//
+var determineColumnNamesFromObjectsIterable = function (iterable, considerAllRows) {
+
+	assert.isFunction(iterable);
+
+	var iterator = iterable();
+
+	if (considerAllRows) {
+		// Consider all rows, this expensive, so it is optional.
+		var rows = [];
+		while (iterator.moveNext()) {
+			rows.push(iterator.getCurrent());
+		}
+		
+		return E.from(rows)
+			.selectMany(function (row) {
+				return Object.keys(row);
+			})
+			.distinct()
+			.toArray();
+	}
+	else {
+		// Just consider the first row.		
+		if (!iterator.moveNext()) {
+			return []; // Nothing in the iterable.
+		}
+
+		return Object.keys(iterator.getCurrent());
+	}
+};
+
+//
+// Evaluate an iterable of index/value pairs, look at the fields in the vlaues and figure out column names from that.
+//
+var determineColumnNamesFromPairsIterable = function (iterable, considerAllRows) {
+
+	assert.isFunction(iterable);
+
+	var iterator = iterable();
+
+	if (considerAllRows) {
+		// Consider all rows, this expensive, so it is optional.
+		var rows = [];
+		while (iterator.moveNext()) {
+			rows.push(iterator.getCurrent()[1]);
+		}
+		
+		return E.from(rows)
+			.selectMany(function (row) {
+				return Object.keys(row);
+			})
+			.distinct()
+			.toArray();
+	}
+	else {
+		// Just consider the first row.
+		if (!iterator.moveNext()) {
+			return []; // Nothing in the iterable.
+		}
+
+		return Object.keys(iterator.getCurrent()[1]);
+	}
+};
+
+//
+// Constuctor.
+//
 var DataFrame = function (config) {
 
 	var self = this;
+	self.Constructor = DataFrame;
 
-	if (!config) {
-		self._columnNames = [];
-		self.getIterator = function () {
-			return new EmptyIterator();
-		};
-		return;
-	}
+	var _columnNames = null;
 
-	if (config.iterable) {
+	if (config) {
 
-		assert.isFunction(config.iterable, "Expected 'iterable' field of 'config' parameter to DataFrame constructor to be a function that returns an index/value pairs iterator.");
-
-		var iterable = config.iterable;
-
-		if (config.columnNames) {
-			if (!Object.isFunction(config.columnNames)) {
-				assert.isArray(config.columnNames, "Expected 'columnNames' field of 'config' parameter to DataFrame constructor to be an array of column names or function that returns an array of column names.");
-			};
-
-			self._columnNames = config.columnNames;
-		}
-		else {
-			self._columnNames = function () { //todo: could just make this the default behavior if no columns are specified ?!
-				var iterator = iterable();
-				if (!iterator.moveNext()) {
-					return [];
-				}
-
-				return Object.keys(iterator.getCurrent()[1]);
-			};
-		}
-		self.getIterator = iterable;
-		return;
-	}
-
-	if (!config.rows &&  !config.columns) {
-		self._columnNames = config.columnNames || [];
-		self.getIterator = function () {
-			return new EmptyIterator();
-		};
-		return;
-	}
-
-	assert.isObject(config, "Expected 'config' parameter to DataFrame constructor to be an object with options for initialisation.");
-
-	if (config.index) {
-		if (!Object.isArray(config.index)) {
-			assert.isObject(config.index, "Expected 'index' member of 'config' parameter to DataFrame constructor to be an object.");			
-		}
-	}
-
-	if (config.columnNames) {
-		if (!Object.isFunction(config.columnNames)) {
-			assert.isArray(config.columnNames, "Expected 'columnNames' member of 'config' parameter to DataFrame constructor to be an array of strings or a function that produces an array of strings.");
-
-			config.columnNames.forEach(function (columnName) {
-				assert.isString(columnName, "Expected 'columnNames' member of 'config' parameter to DataFrame constructor to be an array of strings or a function that produces an array of strings.");
-			});
-		}
-
-		if (!config.rows) {
-			throw new Error("Expected to find a 'rows' member of 'config' parameter to DataFrame constructor.");
-		}
-
-	 	if (!Object.isFunction(config.rows)) {
-			assert.isArray(config.rows, "Expected 'rows' member of 'config' parameter to DataFrame constructor to be an array of rows.");
-
-			if (config.debug) {
-				config.rows.forEach(function (row) {
-					assert.isArray(row, "Expected 'rows' member of 'config' parameter to DataFrame constructor to be an array of arrays, an array of objects or an iterator.");
-				});
-			}
-		}
-	}
-	else if (config.rows) {
-		assert(!config.columns, "Can't use both 'rows' and 'columns' fields of 'config' parameter to DataFrame constructor.");
-
-		if (!Object.isFunction(config.rows)) {
-			assert.isArray(config.rows, "Expected 'rows' member of 'config' parameter to DataFrame constructor to be an array of JavaScript objects.");
-			
-			if (config.rows.length > 0) {
-				assert.isObject(config.rows[0], "Expected 'rows' member of 'config' parameter to DataFrame constructor to be an array of JavaScript objects.")
-			}
-		}
-	}
-	else if (config.columns) {
-		assert.isObject(config.columns, "Expected 'columns' member of 'config' parameter to DataFrame constructor to be an object with fields that define columns.");
-	}
-
-	var rows = config.rows;
-	var columns = config.columns;
-
-	if (config.columnNames)	{
-		self._columnNames = config.columnNames;
-
-		if (config.index) {
-			var index = config.index;
-			if (Object.isArray(index)) {
-
-				if (Object.isFunction(rows)) {
-					this.getIterator = function () {
-						return new PairIterator(new ArrayIterator(index), convertRowsToObjects(self._columnNames, rows()));
-					};
-				}
-				else {
-					this.getIterator = function () {
-						return new PairIterator(new ArrayIterator(index), convertRowsToObjects(self._columnNames, new ArrayIterator(rows)));
-					};
-				}
+		if (Object.isObject(config)) {			
+			if (config.iterable) {
+				assert.isObject(config.iterable, "Expect 'iterable' field of 'config' parameter to DataFrame constructor to be an object that implements getIterator and getColumnNames.");
+				assert.isFunction(config.iterable.getIterator, "Expect 'iterable' field of 'config' parameter to DataFrame constructor to be an object that implements getIterator and getColumnNames.");
+				assert.isFunction(config.iterable.getColumnNames, "Expect 'iterable' field of 'config' parameter to DataFrame constructor to be an object that implements getIterator and getColumnNames.");			
 			}
 			else {
-				if (Object.isFunction(rows)) {
-					this.getIterator = function () {
-						return new PairIterator(index.getIterator(), convertRowsToObjects(self._columnNames, rows()));
-					};
+				if (config.columnNames) {
+					assert.isArray(config.columnNames, "Expected 'columnNames' member of 'config' parameter to DataFrame constructor to be an array of strings.");
+
+					config.columnNames.forEach(function (columnName) {
+						assert.isString(columnName, "Expected 'columnNames' member of 'config' parameter to DataFrame constructor to be an array of strings.");
+					});
+				}
+				
+				if (config.values) {
+					assert(!config.columns, "Can't use both 'values' and 'columns' fields of 'config' parameter to DataFrame constructor.");
+				}
+				else if (config.columns) {
+					assert.isObject(config.columns, "Expected 'columns' member of 'config' parameter to DataFrame constructor to be an object with fields that define columns.");
+					assert(!config.columnNames, "Can't use both 'columns' and 'columnNames' of 'config' parameter to DataFrame constructor.");
+				}
+
+				var values = config.values;
+				var columns = config.columns;
+
+				if (config.columnNames)	{
+					//
+					// Rename duplicate columns.
+					//
+					var duplicateColumns = E.from(config.columnNames)
+						.groupBy(function (columnName) {
+							return columnName.toLowerCase();
+						})
+						.select(function (group) {
+							return {
+								name: group.key(),
+								count: group.getSource().length,
+							}
+						})
+						.where(function (column) {
+							return column.count > 1;
+						})
+						.toArray();
+
+					var duplicateColumnCounts = E.from(duplicateColumns)
+						.toObject(
+							function (column) {
+								return column.name;
+							},						
+							function (column) {
+								return 1;
+							}						
+						);
+
+					_columnNames = E.from(config.columnNames)
+						.select(function (columnName) {
+							var key = columnName.toLowerCase();
+							var columnCount = duplicateColumnCounts[key];
+							if (columnCount) {
+								duplicateColumnCounts[key] += 1; // Increment count. 
+								return columnName + "." + columnCount; // Number duplicates in order.
+							}
+							else {
+								return columnName; // No duplicate.
+							}
+						})
+						.toArray();
+
+					if (Object.isFunction(values)) {
+						config.values = function () {
+							return convertRowsToObjects(_columnNames, values());
+						};
+					}
+					else {
+						config.values = function () {
+							return convertRowsToObjects(_columnNames, new ArrayIterator(values));
+						};
+					}
 				}
 				else {
-					this.getIterator = function () {
-						return new PairIterator(index.getIterator(), convertRowsToObjects(self._columnNames, new ArrayIterator(rows)));
-					};				
+					if (values) {
+						if (Object.isFunction(values)) {
+							_columnNames = determineColumnNamesFromObjectsIterable(values, config.considerAllRows);
+						}
+						else {
+							// Derive column names from object fields.
+							_columnNames = determineColumnNamesFromObjectRows(values, config.considerAllRows);
+						}
+					}
+					else if (columns) {
+						_columnNames = Object.keys(columns);
+
+						config.values = function () {
+							var columnIterators = E.from(_columnNames)
+								.select(function (columnName) {
+									var column = columns[columnName];
+									if (column instanceof Series) {
+										column = column.toValues();
+									}
+									return new ArrayIterator(column);
+								})
+								.toArray();
+							return convertRowsToObjects(_columnNames, new MultiIterator(columnIterators));
+						};
+					}
+					else {
+						_columnNames = [];
+					}
 				}
 			}
 		}
 		else {
-			if (Object.isFunction(rows)) {
-				this.getIterator = function () {
-					return new PairIterator(new CountIterator(), convertRowsToObjects(self._columnNames, rows()));
-				};
-			}
-			else {
-				this.getIterator = function () {
-					return new PairIterator(new CountIterator(), convertRowsToObjects(self._columnNames, new ArrayIterator(rows)));
-				};
-			}
-		}	
+			assert.isArray(config, "Expected 'config' parameter to DataFrame constructor to be an array of objects or a configuration object with options for initialisation.");
+
+			_columnNames = determineColumnNamesFromObjectRows(config, false);			
+		}
 	}
 	else {
-		if (rows) {
-			if (Object.isFunction(rows)) {
+		_columnNames = [];
+	}
 
-				self._columnNames = function () {
-					var iterator = config.rows();
-					if (!iterator.moveNext()) {
-						return [];
-					}
+	Series.call(this, config);
 
-					return Object.keys(iterator.getCurrent());
-				};				
-			}
-			else {
-				if (config.rows.length > 0) {
-
-					// Derive column names from object fields.
-					self._columnNames = Object.keys(config.rows[0]);
-				}
-				else {
-					self._columnNames = [];
-				}
-			}
-		}
-		else {
-			self._columnNames = Object.keys(columns);
-		}
-
-		if (config.index) {
-			var index = config.index;
-			if (Object.isArray(index)) {
-
-				if (rows) {
-					if (Object.isFunction(rows)) {
-						this.getIterator = function () {
-							return new PairIterator(new ArrayIterator(index), rows());
-						};
-					}
-					else {
-						this.getIterator = function () {
-							return new PairIterator(new ArrayIterator(index), new ArrayIterator(rows));
-						};
-					}
-				}
-				else {
-					this.getIterator = function () {
-						var columnIterators = E.from(self._columnNames)
-							.select(function (columnName) {
-								return new ArrayIterator(columns[columnName]);
-							})
-							.toArray();
-						return new PairIterator(new ArrayIterator(index), convertRowsToObjects(self._columnNames, new MultiIterator(columnIterators)));
-					};
-				}
-			}
-			else {
-				if (rows) {
-					if (Object.isFunction(rows)) {
-						this.getIterator = function () {
-							return new PairIterator(index.getIterator(), rows());
-						};
-					}
-					else {
-						this.getIterator = function () {
-							return new PairIterator(index.getIterator(), new ArrayIterator(rows));
-						};				
-					}
-				}
-				else {
-					this.getIterator = function () {
-						var columnIterators = E.from(self._columnNames)
-							.select(function (columnName) {
-								return new ArrayIterator(columns[columnName]);
-							})
-							.toArray();
-						return new PairIterator(index.getIterator(), convertRowsToObjects(self._columnNames, new MultiIterator(columnIterators)));
-					};
-				}
-			}
-		}
-		else {
-			if (rows) {
-				if (Object.isFunction(rows)) {
-					this.getIterator = function () {
-						return new PairIterator(new CountIterator(), rows());
-					};
-				}
-				else {
-					this.getIterator = function () {
-						return new PairIterator(new CountIterator(), new ArrayIterator(rows));
-					};
-				}
-			}
-			else {
-				this.getIterator = function () {
-						var columnIterators = E.from(self._columnNames)
-							.select(function (columnName) {
-								return new ArrayIterator(columns[columnName]);
-							})
-							.toArray();
-						return new PairIterator(new CountIterator(), convertRowsToObjects(self._columnNames, new MultiIterator(columnIterators)));
-				};
-			}
-		}
+	if (!config || !config.iterable)
+	{
+		self.iterable.getColumnNames = function () {
+			return _columnNames;
+		};
 	}
 };
 
-/**
- * Get the index of the data frame.
- */
-DataFrame.prototype.getIndex = function () {
-	var self = this;
-	return new Index(function () {		
-		return new SelectIterator(
-			self.getIterator(),
-			function (pair) {
-				return pair[0]; // Extract index.
-			}
-		);
-	});
-};
+module.exports = DataFrame;
+
+var Series = require('./series');
+var parent = inherit(DataFrame, Series);
+
+var concatDataFrames = require('./concat-dataframes');
+var SelectValuesIterable = require('./iterables/select-values');
+var ArrayIterable = require('./iterables/array');
 
 /**
  * Get the names of the columns in the data frame.
  */
 DataFrame.prototype.getColumnNames = function () {
 	var self = this;
-	if (Object.isFunction(self._columnNames)) {
-		self._columnNames = self._columnNames(); // Lazy evaluate column names.
-	}
-	return self._columnNames;
-};
-
-/**
- * Get an iterator for the data-frame.
- */
-DataFrame.prototype.getIterator = function () {
-	return new EmptyIterator(); // This function is defined by the constructor.
+	return self.iterable.getColumnNames();
 };
 
 /**
@@ -23477,7 +27648,7 @@ DataFrame.prototype.getColumnIndex = function (columnName) {
 	assert.isString(columnName, "Expected 'columnName' parameter to getColumnIndex to be a non-empty string.");
 	
 	var self = this;	
-	var columnNames = self.getColumnNames();
+	var columnNames = self.iterable.getColumnNames();
 	
 	for (var i = 0; i < columnNames.length; ++i) {
 		if (columnName === columnNames[i]) {
@@ -23495,259 +27666,17 @@ DataFrame.prototype.getColumnIndex = function (columnName) {
  *
  * @returns {string} Returns the name of the column or undefined if the requested column was not found.
  */
-DataFrame.prototype.getColumnName = function (columnIndex) { //todo: test
+DataFrame.prototype.getColumnName = function (columnIndex) {
 	assert.isNumber(columnIndex, "Expected 'columnIndex' parameter to getColumnIndex to be a non-empty string.");
 
 	var self = this;	
-	var columnNames = self.getColumnNames();
+	var columnNames = self.iterable.getColumnNames();
 
 	if (columnIndex < 0 || columnIndex >= columnNames.length) {
 		return undefined;
 	}
 
 	return columnNames[columnIndex];
-};
-
-/**
- * Skip a number of rows in the data frame.
- *
- * @param {int} numRows - Number of rows to skip.
- */
-DataFrame.prototype.skip = function (numRows) {
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'skip' function to be a number.");
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new SkipIterator(self.getIterator(), numRows);
-		},
-	}); 	
-};
-
-/**
- * Skips rows in the data-frame while a condition is met.
- *
- * @param {function} predicate - Return true to indicate the condition met.
- */
-DataFrame.prototype.skipWhile = function (predicate) {
-	assert.isFunction(predicate, "Expected 'predicate' parameter to 'skipWhile' function to be a predicate function that returns true/false.");
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new SkipWhileIterator(self.getIterator(), function (pair) {
-					return predicate(pair[1], pair[0]);
-				});
-		},
-	}); 	
-};
-
-/**
- * Skips rows in the data-frame until a condition is met.
- *
- * @param {function} predicate - Return true to indicate the condition met.
- */
-DataFrame.prototype.skipUntil = function (predicate) {
-	assert.isFunction(predicate, "Expected 'predicate' parameter to 'skipUntil' function to be a predicate function that returns true/false.");
-
-	var self = this;
-	return self.skipWhile(function (value, index) { 
-		return !predicate(value, index); 
-	});
-};
-
-/**
- * Take a number of rows in the data frame.
- *
- * @param {int} numRows - Number of rows to take.
- */
-DataFrame.prototype.take = function (numRows) {
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'take' function to be a number.");
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new TakeIterator(self.getIterator(), numRows);
-		},
-	}); 	
-};
-
-/**
- * Take rows from the data-frame while a condition is met.
- *
- * @param {function} predicate - Return true to indicate the condition met.
- */
-DataFrame.prototype.takeWhile = function (predicate) {
-	assert.isFunction(predicate, "Expected 'predicate' parameter to 'takeWhile' function to be a predicate function that returns true/false.");
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new TakeWhileIterator(self.getIterator(), function (pair) {
-					return predicate(pair[1], pair[0]);
-				});
-		},
-	}); 	
-};
-
-/**
- * Take rows from the data-frame until a condition is met.
- *
- * @param {function} predicate - Return true to indicate the condition met.
- */
-DataFrame.prototype.takeUntil = function (predicate) {
-	assert.isFunction(predicate, "Expected 'predicate' parameter to 'takeUntil' function to be a predicate function that returns true/false.");
-
-	var self = this;
-	return self.takeWhile(function (value, index) { 
-		return !predicate(value, index); 
-	});
-};
-
-/**
- * Filter a data frame by a predicate selector.
- *
- * @param {function} filterSelectorPredicate - Predicte function to filter rows of the data frame.
- */
-DataFrame.prototype.where = function (filterSelectorPredicate) {
-	assert.isFunction(filterSelectorPredicate, "Expected 'filterSelectorPredicate' parameter to 'where' function to be a function.");
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new WhereIterator(self.getIterator(), function (pair) {
-					return filterSelectorPredicate(pair[1], pair[0]);
-				});
-		},
-	}); 	
-};
-
-/**
- * Generate a new data frame based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each row to generate a transformed data-frame.
- */
-DataFrame.prototype.select = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'DataFrame.select' to be a selector functions.");
-
-	var self = this;
-	return new DataFrame({
-		iterable: function () {
-			return new SelectIterator(self.getIterator(), function (pair) {
-					var newValue = selector(pair[1], pair[0]);
-					if (!Object.isObject(newValue)) {
-						throw new Error("Expected return value from 'select' selector to be an object that represents a new row in the resulting data-frame.");
-					};
-					return [
-						pair[0],
-						newValue,
-					];
-				});
-		},
-	}); 	
-};
-
-/**
- * Generate a new data frame based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each index and row pair to generate a transformed data-frame.
- */
-DataFrame.prototype.selectPairs = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'DataFrame.selectPairs' to be a selector functions.");
-
-	var self = this;
-	return new DataFrame({
-		iterable: function () {
-			return new SelectIterator(self.getIterator(), function (pair) {
-					var newPair = selector(pair[1], pair[0]);
-					if (!Object.isArray(newPair) || newPair.length !== 2 || !Object.isObject(newPair[1])) {
-						throw new Error("Expected return value from 'DataFrame.selectPairs' selector to be a pair, that is an array with two items: [index, object].");
-					}
-					return newPair;
-				});
-		},
-	}); 	
-};
-
-/**
- * Generate a new data frame based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each row to create a new data-frame.
- */
-DataFrame.prototype.selectMany = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'DataFrame.selectMany' function to be a function.");
-
-	var self = this;
-	return new DataFrame({
-		iterable: function () {
-			return new SelectManyIterator(self.getIterator(), function (pair) {
-				var newRows = selector(pair[1], pair[0]);
-				if (!Object.isArray(newRows)) {
-					throw new Error("Expected return value from 'DataFrame.selectMany' selector to be an array of objects, each object represents a new row in the resulting data-frame.");
-				}
-
-				var newPairs = [];
-				for (var newRowIndex = 0; newRowIndex < newRows.length; ++newRowIndex) {
-					var newRow = newRows[newRowIndex];
-					if (!Object.isObject(newRow)) {
-						throw new Error("Expected array returned from 'DataFrame.selectMany' selector to contain only objects, each object represents a new row in the resulting data-frame.");
-					};
-
-					newPairs.push([
-						pair[0], 
-						newRow,
-					]);
-				}
-
-				return newPairs;
-			})
-		},
-	}); 	
-};
-
-/**
- * Generate a new data frame based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each index/row pair to create a new data-frame.
- */
-DataFrame.prototype.selectManyPairs = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'DataFrame.selectManyPairs' function to be a function.");
-
-	var self = this;
-	return new DataFrame({
-		iterable: function () {
-			return new SelectManyIterator(self.getIterator(), function (pair) {
-				var newPairs = selector(pair[1], pair[0]);
-				if (!Object.isArray(newPairs)) {
-					throw new Error("Expected return value from 'DataFrame.selectManyPairs' selector to be an array of pairs, each item in the array represents a new pair in the resulting DataFrame.");
-				}
-
-				for (var pairIndex = 0; pairIndex < newPairs.length; ++pairIndex) {
-					var newPair = newPairs[pairIndex];
-					if (!Object.isArray(newPair) || newPair.length !== 2 || !Object.isObject(newPair[1])) {
-						throw new Error("Expected return value from 'DataFrame.selectManyPairs' selector to be am array of pairs, but item at index " + pairIndex + " is not an array with two items: [index, object].");
-					}
-				}
-
-				return newPairs;
-			})
-		},
-	}); 	
 };
 
 /**
@@ -23761,19 +27690,12 @@ DataFrame.prototype.getSeries = function (columnName) {
 	assert.isString(columnName, "Expected 'columnName' parameter to getSeries function to be a string that specifies the name of the column to retreive.");
 
 	return new Series({
-		iterable: function () {
-			return new WhereIterator(
-				new SelectIterator(self.getIterator(), function (pair) {
-					return [
-						pair[0],
-						pair[1][columnName],
-					];
-				}),
-				function (pair) {
-					return pair[1] !== undefined;
-				}
-			);
-		},
+		iterable: new SelectValuesIterable(
+			self.iterable,
+			function (value) {
+				return value[columnName];
+			}
+		),
 	});
 };
 
@@ -23835,193 +27757,32 @@ DataFrame.prototype.subset = function (columnNames) {
 	assert.isArray(columnNames, "Expected 'columnNames' parameter to 'subset' to be an array.");	
 	
 	return new DataFrame({
-		columnNames: columnNames,
-		iterable: function () {
-			return new SelectIterator(
-				self.getIterator(),
-				function (pair) {
-					return [
-						pair[0],
-						E.from(columnNames)
-							.toObject(
-								function (columnName) {
-									return columnName;
-								},
-								function (columnName) {
-									return pair[1][columnName];
-								}
-							)
-					];					
-				}
-			);
-		},
-	});	 
-};
-
-//
-// Throw an exception if the sort method doesn't make sense.
-//
-var validateSortMethod = function (sortMethod) {
-	assert.isString(sortMethod);
-	assert(
-		sortMethod === 'orderBy' || 
-	   sortMethod === 'orderByDescending' ||
-	   sortMethod === 'thenBy' ||
-	   sortMethod === 'thenByDescending', 
-	   "Expected 'sortMethod' to be one of 'orderBy', 'orderByDescending', 'thenBy' or 'thenByDescending', instead it is '" + sortMethod + "'."
-   );
-};
-
-//
-// Execute a batched sorting command.
-//
-var executeOrderBy = function (self, batch) {
-
-	assert.isObject(self);
-	assert.isArray(batch);
-	assert(batch.length > 0);
-
-	//todo: reconsider how this works wih lazy iterators.
-
-	//
-	// Don't invoke the sort until we really know what we need.
-	//
-	var executeLazySort = function () {
-
-		batch.forEach(function (orderCmd) {
-			assert.isObject(orderCmd);
-			assert.isFunction(orderCmd.sortSelector);
-			validateSortMethod(orderCmd.sortMethod);
-		});
-
-		var pairs = self.getIterator().realize();
-
-		return E.from(batch)
-			.aggregate(E.from(pairs), function (unsorted, orderCmd) {
-				return unsorted[orderCmd.sortMethod](function (pair) {
-					assert.isArray(pair);
-					assert(pair.length === 2);
-					return orderCmd.sortSelector(pair[1]);
-				}); 
-			})
-			.toArray();
-	};
-
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new ArrayIterator(executeLazySort());
-		},
-	});
-};
-
-//
-// Order by values in a partcular column, either ascending or descending
-//
-var orderBy = function (self, sortMethod, sortSelector) {
-	assert.isObject(self);
-	validateSortMethod(sortMethod);
-	assert.isFunction(sortSelector);
-
-	var batchOrder = [
-		{ 
-			sortSelector: sortSelector, 
-			sortMethod: sortMethod 
-		}
-	];
-
-	var sortedDataFrame = executeOrderBy(self, batchOrder);
-	sortedDataFrame.thenBy = orderThenBy(self, batchOrder, 'thenBy');
-	sortedDataFrame.thenByDescending = orderThenBy(self, batchOrder, 'thenByDescending');	
-	return sortedDataFrame;
-};
-
-//
-// Process a column selector that might be a column name, column index or selector function.
-// Returns a selector fucntion.
-//
-var processColumnSelector = function (self, columnNameOrIndexOrSelector, fnName) {
-	assert.isObject(self);
-	assert.isString(fnName);
-
-	if (!Object.isFunction(columnNameOrIndexOrSelector)) {
-
-		var columnName;
-
-		if (Object.isNumber(columnNameOrIndexOrSelector)) {
-			var columnNames = self.getColumnNames();
-			assert(
-				columnNameOrIndexOrSelector >= 0 && columnNameOrIndexOrSelector < columnNames.length, 
-				"Bad column index specified for 'columnNameOrIndexOrSelector' parameter to 'orderBy', expected a column index >= 0 and < " + columnNames.length
-			);
-			
-			columnName = columnNames[columnNameOrIndexOrSelector];
-		}
-		else {
-			assert.isString(
-				columnNameOrIndexOrSelector, 
-				"Expected 'columnNameOrIndexOrSelector' parameter to '" + fnName + "' to be a column name, a column index or a selector function."
-			);
-
-			columnName = columnNameOrIndexOrSelector;
-		}
-
-		columnNameOrIndexOrSelector = function (row) {
-				return row[columnName];
-			};
-	}
-
-	return columnNameOrIndexOrSelector;
-};
-
-
-//
-// Generates a thenBy function that is attached to already ordered data frames.
-//
-var orderThenBy = function (self, batch, nextSortMethod) {
-	assert.isObject(self);
-	assert.isArray(batch);
-	assert(batch.length > 0);
-	validateSortMethod(nextSortMethod);
-	
-	return function (columnNameOrIndexOrSelector) {
-
-		var extendedBatch = batch.concat([
-			{
-				sortSelector: processColumnSelector(self, columnNameOrIndexOrSelector, 'thenBy'),
-				sortMethod: nextSortMethod,
+		iterable: {
+			getIterator: function () {
+				return new SelectIterator(
+					self.iterable.getIterator(),
+					function (pair) {
+						return [
+							pair[0],
+							E.from(columnNames)
+								.toObject(
+									function (columnName) {
+										return columnName;
+									},
+									function (columnName) {
+										return pair[1][columnName];
+									}
+								)
+						];					
+					}
+				);
 			},
-		]);
 
-		var sortedDataFrame = executeOrderBy(self, extendedBatch);
-		sortedDataFrame.thenBy = orderThenBy(self, extendedBatch, 'thenBy');
-		sortedDataFrame.thenByDescending = orderThenBy(self, extendedBatch, 'thenByDescending');		
-		return sortedDataFrame;
-	};	
-};
-
-/**
- * Sorts a data frame based on a single column (specified by name or index) or by selector (ascending). 
- * 
- * @param {string|index|function} columnNameOrIndexOrSelector - A column name, column index or selector function that indicates the value to sort by.
- */
-DataFrame.prototype.orderBy = function (columnNameOrIndexOrSelector) {
-
-	var self = this;
-	return orderBy(self, 'orderBy', processColumnSelector(self, columnNameOrIndexOrSelector, 'orderBy'));
-};
-
-/**
- * Sorts a data frame based on a single column (specified by name or index) or by selector (descending). 
- * 
- * @param {string|index|function} columnNameOrIndexOrSelector - A column name, column index or selector function that indicates the value to sort by.
- */
-DataFrame.prototype.orderByDescending = function (columnNameOrIndexOrSelector) {
-
-	var self = this;
-	return orderBy(self, 'orderByDescending', processColumnSelector(self, columnNameOrIndexOrSelector, 'orderByDescending'));
+			getColumnNames: function () {
+				return columnNames;
+			},
+		}, 
+	});	 
 };
 
 /**
@@ -24034,34 +27795,80 @@ DataFrame.prototype.dropSeries = function (columnOrColumns) {
 	var self = this;
 
 	if (!Object.isArray(columnOrColumns)) {
-		assert.isString(columnOrColumns, "'dropSeries' expected either a string or an array or strings.");
+		assert.isString(columnOrColumns, "'DataFrame.dropSeries' expected either a string or an array or strings.");
+
+		columnOrColumns = [columnOrColumns]; // Convert to array for coding convenience.
+	}
+
+	var columnNames = self.iterable.getColumnNames().slice(0); // Clone array.
+	var newColumnNames = E.from(columnNames)
+		.where(function (columnName) {
+			return !E.from(columnOrColumns).contains(columnName);
+		})
+		.toArray();
+
+	return new DataFrame({
+		columnNames: newColumnNames,
+		iterable: {
+			getIterator: function () {
+				return new SelectIterator(
+					self.iterable.getIterator(),
+					function (value) {
+						var row = extend({}, value);
+						columnOrColumns.forEach(function (columnName) {
+							delete row[columnName];
+						});
+						return row;
+					}
+				);
+
+			},
+
+			getColumnNames: function () {
+				return newColumnNames;
+			}
+		}, 
+	});
+};
+
+/**
+ * Create a new data frame with only the requested column or columns dropped, other columns are dropped.
+ *
+ * @param {string|array} columnOrColumns - Specifies the column name (a string) or columns (array of column names) to keep.
+ */
+DataFrame.prototype.keepSeries = function (columnOrColumns) {
+
+	var self = this;
+
+	if (!Object.isArray(columnOrColumns)) {
+		assert.isString(columnOrColumns, "'DataFrame.keepSeries' expected either a string or an array or strings.");
 
 		columnOrColumns = [columnOrColumns]; // Convert to array for coding convenience.
 	}
 
 	return new DataFrame({
-		columnNames: function () {
-			var columnNames = self.getColumnNames().slice(0); // Clone array.
-			return E.from(columnNames)
-				.where(function (columnName) {
-					return !E.from(columnOrColumns).contains(columnName);
-				})
-				.toArray();
-		},
-		iterable: function () {
-			return new SelectIterator(
-				self.getIterator(),
-				function (pair) {
-					var row = extend({}, pair[1]);
-					columnOrColumns.forEach(function (columnName) {
-						delete row[columnName];
-					});
-					return [
-						pair[0],
-						row
-					];					
-				}
-			);
+		iterable: {
+			getIterator: function () {
+				return new SelectIterator(
+					self.iterable.getIterator(),
+					function (pair) {
+						var row = extend({}, pair[1]);
+						Object.keys(row).forEach(function (fieldName) {
+							if (!E.from(columnOrColumns).contains(fieldName)) {
+								delete row[fieldName];
+							}
+						});
+						return [
+							pair[0],
+							row
+						];					
+					}
+				);
+			},
+
+			getColumnNames: function() {
+				return columnOrColumns;
+			}
 		},
 	});
 };
@@ -24070,142 +27877,47 @@ DataFrame.prototype.dropSeries = function (columnOrColumns) {
  * Create a new data frame with an additional column specified by the passed-in series.
  *
  * @param {string} columnName - The name of the column to add or replace.
- * @param {array|column} data - Array of data or column that contains data.
+ * @param {Series} series - Series to add to the data-frame.
  */
-DataFrame.prototype.setSeries = function (columnName, data) { //todo
+DataFrame.prototype.withSeries = function (columnName, series) {
 
-	assert.isString(columnName, "Expected 'columnName' parameter to 'setSeries' function to be a string that specifies the column to set or replace.");
+	assert.isString(columnName, "Expected 'columnName' parameter to 'DataFrame.withSeries' function to be a string that specifies the column to set or replace.");
+	assert.isObject(series, "Expected 'series' parameter to 'DataFrame.withSeries' to be a Series object.");
 
 	var self = this;
-
-	if (Object.isFunction(data)) {
-		data = E.from(self.toPairs()) //todo: make this lazy
-			.select(function (pair) {
-				return data(pair[1], pair[0]);
-			})
-			.toArray();
-	}
-	else if (!Object.isArray(data)) {
-		assert.isObject(data, "Expected 'data' parameter to 'setSeries' to be either an array or a series object.");
-		assert.isFunction(data.reindex, "Expected 'data' parameter to 'setSeries' to have a 'reindex' function that allows the column to be reindexed.");
-
-		data = data.reindex(self.getIndex()).toValues();
-	}
-
-	//todo: overview and improve the way this works.
-
-	var columnIndex = self.getColumnIndex(columnName);
-	if (columnIndex < 0) {		
-		// Add new column.
-		return new DataFrame({
-			columnNames: self.getColumnNames().concat([columnName]),
-			rows: function () {
-				return new ArrayIterator(
-					E.from(self.toValues())
-						.select(function (row, rowIndex) {
-							return row.concat([data[rowIndex]]);
-						})
-						.toArray()
-				);
-			},
-			index: self.getIndex(),
-		});
-	}
-	else {
-		// Replace existing column.
-		return new DataFrame({
-			columnNames: E.from(self.getColumnNames())
-				.select(function (thisColumnName, thisColumnIndex) {
-					if (thisColumnIndex === columnIndex) {
-						return columnName;
-					}
-					else { 
-						return thisColumnName;
-					}
-				})
-				.toArray(),
-			rows: function () {
-				return new ArrayIterator(
-					E.from(self.toValues())
-						.select(function (row, rowIndex) {
-							return E.from(row)
-								.select(function (column, thisColumnIndex) {
-									if (thisColumnIndex === columnIndex) {
-										return data[rowIndex];
-									}
-									else {
-										return column;
-									}
-								})
-								.toArray();
-						})
-						.toArray()
-				);
-			},
-			index: self.getIndex(),
-		});
-	}
-};
-
-/**
- * Create a new data-frame from a slice of rows.
- *
- * @param {int|function} startIndexOrStartPredicate - Index where the slice starts or a predicate function that determines where the slice starts.
- * @param {int|function} endIndexOrEndPredicate - Marks the end of the slice, one row past the last row to include. Or a predicate function that determines when the slice has ended.
- * @param {function} [predicate] - Optional predicate to compare index against start/end index. Return true to start or stop the slice.
- */
-DataFrame.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPredicate, predicate) {
-
-	var self = this;
-
-	var startIndex;
-	var endIndex;
-	var startPredicate = null;
-	var endPredicate = null;
-
-	if (predicate) {
-		assert.isFunction(predicate, "Expected 'predicate' parameter to slice function to be function.");
-	}
-
-	if (Object.isFunction(startIndexOrStartPredicate)) {
-		startPredicate = startIndexOrStartPredicate;
-	}
-	else {
-		startIndex = startIndexOrStartPredicate;
-		startPredicate = function (value) {
-				return predicate && predicate(value, startIndex) || value < startIndex;
-			};
-	}
-
-	if (Object.isFunction(endIndexOrEndPredicate)) {
-		endPredicate = endIndexOrEndPredicate;
-	}
-	else {
-		endIndex = endIndexOrEndPredicate;
-		endPredicate = function (value) {
-				return predicate && predicate(value, endIndex) || value < endIndex;
-			};
-	}
 
 	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new TakeWhileIterator(
-				new SkipWhileIterator(
-					self.getIterator(),
-					function (pair) {
-						return startPredicate(pair[0]); // Check index for start condition.
-					}
-				),
-				function (pair) {
-					return endPredicate(pair[0]); // Check index for end condition.
-				}
-			);
-		},		
-	});
+		iterable: {
+			getIterator: function () {
+				var seriesValueMap = E.from(series.toPairs())
+					.toObject(
+						function (pair) {
+							return pair[0];
+						},
+						function (pair) {
+							return pair[1];
+						}
+					);
 
+				return new SelectIterator(
+					self.iterable.getIterator(),
+					function (pair) {
+						var index = pair[0];
+						var newValue = extend({}, pair[1]);
+						newValue[columnName] = seriesValueMap[index];
+						return [index, newValue];						
+					}
+				);
+			},
+
+			getColumnNames: function () {
+				return E.from(self.iterable.getColumnNames())
+					.concat([columnName])
+					.distinct()
+					.toArray();
+			},
+		},
+	});
 };
 
 /**
@@ -24216,48 +27928,7 @@ DataFrame.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndP
 DataFrame.prototype.setIndex = function (columnName) {
 
 	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new PairIterator(
-				new SelectIterator(
-					self.getSeries(columnName).getIterator(),
-					function (pair) {
-						return pair[1];
-					}
-				),				
-				new SelectIterator(
-					self.getIterator(),
-					function (pair) {
-						return pair[1];
-					}
-				)
-			);
-		},
-	});
-};
-
-/**
- * Reset the index of the data frame back to the default sequential integer index.
- */
-DataFrame.prototype.resetIndex = function () {
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new SelectIterator(
-				self.getIterator(),
-				function (pair, i) {
-					return [i, pair[1]];
-				}
-			);
-		},
-	});
+	return self.withIndex(self.getSeries(columnName));
 };
 
 /** 
@@ -24268,16 +27939,22 @@ DataFrame.prototype.toString = function () {
 	var self = this;
 	var Table = require('easy-table');
 
-	var index = self.getIndex().toValues();
-	var header = ["__index__"].concat(self.getColumnNames());
-	var rows = E.from(self.toValues())
-		.select(function (row, rowIndex) { 
-			return [index[rowIndex]].concat(row);
+	var columnNames = self.iterable.getColumnNames();
+	var pairs = E.from(self.toPairs())
+		.select(function (pair) { // Convert to rows.
+			return [pair[0]]
+				.concat(
+					E.from(columnNames) 
+						.select(function (columnName) {
+							return pair[1][columnName];
+						})
+						.toArray()					
+				);
 		})
-		.toArray()
-
+		.toArray();
+	var header = ["__index__"].concat(columnNames);
 	var t = new Table();
-	rows.forEach(function (row, rowIndex) {
+	pairs.forEach(function (row, rowIndex) {
 		row.forEach(function (cell, cellIndex) {
 			t.cell(header[cellIndex], cell);
 		});
@@ -24290,55 +27967,87 @@ DataFrame.prototype.toString = function () {
 /**
  * Parse a column with string values to a column with int values.
  *
- * @param {string|int} columnNameOrIndex - Specifies the column to parse.
+ * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
  */
-DataFrame.prototype.parseInts = function (columnNameOrIndex) {
+DataFrame.prototype.parseInts = function (columnNameOrNames) {
 
 	var self = this;
-	return self.setSeries(columnNameOrIndex, self.getSeries(columnNameOrIndex).parseInts());
+	if (Object.isArray(columnNameOrNames)) {
+		return E.from(columnNameOrNames)
+			.aggregate(self, function (self, columnName) {
+				return self.withSeries(columnName, self.getSeries(columnName).parseInts());
+			});
+	}
+	else {
+		return self.withSeries(columnNameOrNames, self.getSeries(columnNameOrNames).parseInts());
+	}
 };
 
 /**
  * Parse a column with string values to a column with float values.
  *
- * @param {string|int} columnNameOrIndex - Specifies the column to parse.
+ * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
  */
-DataFrame.prototype.parseFloats = function (columnNameOrIndex) {
+DataFrame.prototype.parseFloats = function (columnNameOrNames) {
 
 	var self = this;
-	return self.setSeries(columnNameOrIndex, self.getSeries(columnNameOrIndex).parseFloats());
+	if (Object.isArray(columnNameOrNames)) {
+		return E.from(columnNameOrNames)
+			.aggregate(self, function (self, columnName) {
+				return self.withSeries(columnName, self.getSeries(columnName).parseFloats());
+			});
+	}
+	else {
+		return self.withSeries(columnNameOrNames, self.getSeries(columnNameOrNames).parseFloats());
+	}
 };
 
 /**
  * Parse a column with string values to a column with date values.
  *
- * @param {string|int} columnNameOrIndex - Specifies the column to parse.
+ * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
  * @param {string} [formatString] - Optional formatting string for dates.
  */
-DataFrame.prototype.parseDates = function (columnNameOrIndex, formatString) {
+DataFrame.prototype.parseDates = function (columnNameOrNames, formatString) {
 
 	if (formatString) {
 		assert.isString(formatString, "Expected optional 'formatString' parameter to parseDates to be a string (if specified).");
 	}
 
 	var self = this;
-	return self.setSeries(columnNameOrIndex, self.getSeries(columnNameOrIndex).parseDates(formatString));
+	if (Object.isArray(columnNameOrNames)) {
+		return E.from(columnNameOrNames)
+			.aggregate(self, function (self, columnName) {
+				return self.withSeries(columnName, self.getSeries(columnName).parseDates(formatString));
+			});
+	}
+	else {
+		return self.withSeries(columnNameOrNames, self.getSeries(columnNameOrNames).parseDates(formatString));
+	}
 };
 
 /**
  * Convert a column of values of different types to a column of string values.
  *
- * @param {string|int} columnNameOrIndex - Specifies the column to convert.
+ * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to convert to strings.
  * @param {string} [formatString] - Optional formatting string for dates.
  */
-DataFrame.prototype.toStrings = function (columnNameOrIndex, formatString) {
+DataFrame.prototype.toStrings = function (columnNameOrNames, formatString) {
 
 	if (formatString) {
 		assert.isString(formatString, "Expected optional 'formatString' parameter to parseDates to be a string (if specified).");
 	}
 
 	var self = this;
-	return self.setSeries(columnNameOrIndex, self.getSeries(columnNameOrIndex).toStrings(formatString));
+	if (Object.isArray(columnNameOrNames)) {
+		return E.from(columnNameOrNames)
+			.aggregate(self, function (self, columnName) {
+				return self.withSeries(columnName, self.getSeries(columnName).toStrings(formatString));
+			});
+	}
+	else {
+		return self.withSeries(columnNameOrNames, self.getSeries(columnNameOrNames).toStrings(formatString));
+	}
 };
 
 /**
@@ -24351,7 +28060,7 @@ DataFrame.prototype.detectTypes = function () {
 	var dataFrames = E.from(self.getColumns())
 		.select(function (column) {
 			var series = column.series;
-			var numValues = series.toValues().length;
+			var numValues = series.count();
 			//todo: broad-cast column
 			var newSeries = new Series({
 				values: E.range(0, numValues)
@@ -24362,11 +28071,10 @@ DataFrame.prototype.detectTypes = function () {
 			});
 			return column.series
 				.detectTypes()
-				.setSeries('Column', newSeries);
+				.withSeries('Column', newSeries);
 		})
 		.toArray();
-	var dataForge = require('../index');
-	return dataForge.concat(dataFrames).resetIndex();
+	return concatDataFrames(dataFrames).resetIndex();
 };
 
 /**
@@ -24387,11 +28095,10 @@ DataFrame.prototype.detectValues = function () {
 					})
 					.toArray()
 			});
-			return column.series.detectValues().setSeries('Column', newSeries);
+			return column.series.detectValues().withSeries('Column', newSeries);
 		})
 		.toArray();
-	var dataForge = require('../index');
-	return dataForge.concat(dataFrames).resetIndex();
+	return concatDataFrames(dataFrames).resetIndex();
 };
 /**
  * Produces a new data frame with all string values truncated to the requested maximum length.
@@ -24402,7 +28109,7 @@ DataFrame.prototype.truncateStrings = function (maxLength) {
 	assert.isNumber(maxLength, "Expected 'maxLength' parameter to 'truncateStrings' to be an integer.");
 
 	var self = this;
-	var truncatedValues = E.from(self.toValues()) //todo: make this function lazy.
+	var truncatedValues = E.from(self.toRows()) //todo: make this function lazy.
 		.select(function (row) {
 			return E.from(row)
 				.select(function (value) {
@@ -24419,11 +28126,9 @@ DataFrame.prototype.truncateStrings = function (maxLength) {
 		.toArray();
 
 	return new DataFrame({
-			columnNames: function () {
-				return self.getColumnNames();
-			},
-			rows: truncatedValues,
-		});
+		columnNames: self.iterable.getColumnNames(),
+		values: truncatedValues,
+	});
 };
 
 /**
@@ -24444,9 +28149,9 @@ DataFrame.prototype.remapColumns = function (columnNames) {
 
 	return new DataFrame({
 		columnNames: columnNames,
-		rows: function () { //todo: make this properly lazy.
+		values: function () { //todo: make this properly lazy.
 			return new ArrayIterator(
-				E.from(self.toValues())
+				E.from(self.toRows())
 					.select(function (row) {
 						return E.from(columnNames)
 							.select(function (columnName) {
@@ -24468,86 +28173,86 @@ DataFrame.prototype.remapColumns = function (columnNames) {
 };
 
 /**
- * Create a new data frame with different column names.
+ * Create a new data-frame with renamed series.
  *
- * @param {array} newColumnNames - Array of strings, with an element for each existing column that specifies the new name of that column.
+ * @param {array|object} newColumnNames|columnsMap - Array of strings, with an element for each existing column that specifies the new name of that column. Or, a hash that maps old column name to new column name.
  */
-DataFrame.prototype.renameColumns = function (newColumnNames) {
+DataFrame.prototype.renameSeries = function (newColumnNames) {
 
 	var self = this;
 
-	var existingColumns = self.getColumnNames();
-	var numExistingColumns = existingColumns.length;
+	if (Object.isObject(newColumnNames)) {
+		var self = this;
+		var renamedColumns = self.iterable.getColumnNames().slice(0); // Clone array.
 
-	assert.isArray(newColumnNames, "Expected parameter 'newColumnNames' to renameColumns to be an array with column names.");
-	assert(newColumnNames.length === numExistingColumns, "Expected 'newColumnNames' array to have an element for each existing column. There are " + numExistingColumns + "existing columns.");
+		Object.keys(newColumnNames).forEach(function (existingColumnName, columnIndex) {
+			var columnIndex = self.getColumnIndex(existingColumnName);
+			if (columnIndex === -1) {
+				return; // No column to be renamed.
+			}
 
-	return new DataFrame({
-		columnNames: newColumnNames,
-		iterable: function () {
-			var columnMap = E.from(existingColumns)
-				.zip(newColumnNames, function (oldName, newName) {
-					return [oldName, newName];
-				})
-				.toArray();
+			renamedColumns[columnIndex] = newColumnNames[existingColumnName];
+		});
 
-			return new SelectIterator(
-				self.getIterator(),
-				function (pair) {
-					return [
-						pair[0],
-						E.from(columnMap).toObject(
-							function (remap) {
-								return remap[1];
-							},
-							function (remap) {
-								return pair[1][remap[0]];								
-							}
-						)
-					];
-				}
-			);
-		},
-	});
-};
-
-/*
- * Create a new data frame with a single column renamed.
- * 
- * @param {string} columnName - Specifies the column to rename.
- * @param {string} newColumnName - The new name for the specified column.
- */
-DataFrame.prototype.renameColumn = function (columnName, newColumnName) {
-
-	var self = this;
-	var columnIndex = self.getColumnIndex(columnName);
-	if (columnIndex === -1) {
-		return self; // No column to be renamed.
+		return self.renameSeries(renamedColumns);
 	}
+	else {
+		var existingColumns = self.iterable.getColumnNames();
+		var numExistingColumns = existingColumns.length;
 
-	assert.isString(newColumnName, "Expected 'newColumnName' parameter to 'renameColumn' to be a string.");
+		assert.isArray(newColumnNames, "Expected parameter 'newColumnNames' to renameColumns to be an array with column names.");
+		assert(newColumnNames.length === numExistingColumns, "Expected 'newColumnNames' array to have an element for each existing column. There are " + numExistingColumns + "existing columns.");
 
-	var newColumnNames = self.getColumnNames().slice(0); // Clone array.
-	newColumnNames[columnIndex] = newColumnName;
+		return new DataFrame({
+			iterable: {
+				getIterator: function () {
+					var columnMap = E.from(existingColumns)
+						.zip(newColumnNames, function (oldName, newName) {
+							return [oldName, newName];
+						})
+						.toArray();
 
-	return self.renameColumns(newColumnNames);
+					return new SelectIterator(
+						self.iterable.getIterator(),
+						function (pair) {
+							return [
+								pair[0],
+								E.from(columnMap).toObject(
+									function (remap) {
+										return remap[1];
+									},
+									function (remap) {
+										return pair[1][remap[0]];								
+									}
+								)
+							];
+						}
+					);
+				},
+
+				getColumnNames: function () {
+					return newColumnNames;
+				},
+			},
+		});
+	}
 };
 
 /**
  * Bake the data frame to an array of rows.
  */
-DataFrame.prototype.toValues = function () {
+DataFrame.prototype.toRows = function () {
 
 	var self = this;
 
-	var iterator = self.getIterator();
+	var iterator = self.iterable.getIterator();
 	validateIterator(iterator);
 
 	var values = [];
-	var columnNames = self.getColumnNames();
+	var columnNames = self.iterable.getColumnNames();
 
 	while (iterator.moveNext()) {
-		var curRow = iterator.getCurrent()[1];
+		var curRow = iterator.getCurrent()[1];  // Extract value.
 
 		var asArray = [];
 		for (var columnIndex = 0; columnIndex < columnNames.length; ++columnIndex) {
@@ -24561,30 +28266,11 @@ DataFrame.prototype.toValues = function () {
 };
 
 /**
- * Bake the data frame to an array of JavaScript objects.
- */
-DataFrame.prototype.toObjects = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-	validateIterator(iterator);
-
-	var objects = [];
-
-	while (iterator.moveNext()) {
-		objects.push(iterator.getCurrent()[1]); // Extract values.
-	}
-
-	return objects;
-};
-
-/**
  * Serialize the data frame to JSON.
  */
 DataFrame.prototype.toJSON = function () {
 	var self = this;
-	return JSON.stringify(self.toObjects(), null, 4);
+	return JSON.stringify(self.toValues(), null, 4);
 };
 
 /**
@@ -24593,12 +28279,12 @@ DataFrame.prototype.toJSON = function () {
 DataFrame.prototype.toCSV = function () {
 
 	var self = this;
-	var data = [self.getColumnNames()].concat(self.toValues());
+	var data = [self.iterable.getColumnNames()].concat(self.toRows());
 	return BabyParse.unparse(data);
 
 	/*Old csv stringify.
 	var header = self.getColumnNames().join(',');
-	var rows = E.from(self.toValues())
+	var rows = E.from(self.toRows())
 			.select(function (row) {
 				return row.join(',');
 			})
@@ -24616,58 +28302,6 @@ DataFrame.prototype.toCSV = function () {
 };
 
 /**
- * Retreive the data as pairs of [index, objects].
- */
-DataFrame.prototype.toPairs = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-	validateIterator(iterator);
-
-	var pairs = [];
-
-	while (iterator.moveNext()) {
-		pairs.push(iterator.getCurrent());
-	}
-
-	return pairs;
-};
-
-/**
- * Forces lazy evaluation to complete and 'bakes' the data frame into memory.
- */
-DataFrame.prototype.bake = function () {
-
-	var self = this;
-	var pairs = self.toPairs();
-	return new DataFrame({
-		columnNames: self.getColumnNames(),
-		iterable: function () {
-			return new ArrayIterator(pairs);
-		},
-	});
-};
-
-/**
- * Count the number of rows in the data frame.
- */
-DataFrame.prototype.count = function () {
-
-	var self = this;
-
-	var total = 0;
-
-	var iterator = self.getIterator();
-
-	while (iterator.moveNext()) {
-		++total;
-	}
-
-	return total;
-};
-
-/**
  * Transform one or more columns. This is equivalent to extracting a column, calling 'select' on it,
  * then plugging it back in as the same column.
  *
@@ -24682,7 +28316,7 @@ DataFrame.prototype.transformSeries = function (columnSelectors) {
 	return E.from(Object.keys(columnSelectors))
 		.aggregate(self, function (prevDataFrame, columnName) {
 			if (prevDataFrame.hasSeries(columnName)) {
-				return prevDataFrame.setSeries(
+				return prevDataFrame.withSeries(
 					columnName,
 					prevDataFrame.getSeries(columnName)
 						.select(columnSelectors[columnName])
@@ -24694,192 +28328,12 @@ DataFrame.prototype.transformSeries = function (columnSelectors) {
 		});
 };
 
-/**
- * Segment a DataFrame into 'windows'. Returns a new Series. Each value in the new Series contains a 'window' (or segment) of the original DataFrame.
- * Use select or selectPairs to aggregate.
- *
- * @param {integer} period - The number of rows in the window.
- */
-DataFrame.prototype.window = function (period, obsoleteSelector) {
-
-	assert.isNumber(period, "Expected 'period' parameter to 'window' to be a number.");
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
-
-	var self = this;
-
-	return new Series({
-		iterable: function () {
-
-			var curOutput = undefined;
-			var windowIndex = 0;
-
-			return {
-				moveNext: function () {
-					var window = self.skip(windowIndex*period).take(period);
-					if (window.none(function () { return true; })) { //todo: Shouldn't have to pass a predicate.
-						return false; // Nothing left.
-					}
-
-					curOutput = [
-						windowIndex, 
-						window,						
-					];
-					++windowIndex;
-					return true;
-				},
-
-				getCurrent: function () {
-					return curOutput;
-				},
-			};
-
-		}
-	});	
-};
-
-/** 
- * Segment a DataFrame into 'rolling windows'. Returns a new Series. Each value in the new Series contains a 'window' (or segment) of the original DataFrame.
- * Use select or selectPairs to aggregate.
-
- * @param {integer} period - The number of rows in the window.
- */
-DataFrame.prototype.rollingWindow = function (period, obsoleteSelector) {
-
-	assert.isNumber(period, "Expected 'period' parameter to 'rollingWindow' to be a number.");
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
-
-	var self = this;
-
-	return new Series({
-		iterable: function () {
-
-			var curOutput = undefined;
-			var windowIndex = 0;
-
-			return {
-				moveNext: function () {
-					var window = self.skip(windowIndex).take(period);
-					if (window.count() < period) { //todo: should haven't to count the entire window here.
-						return false;
-					}
-					
-					curOutput = [
-						windowIndex, 
-						window,						
-					];
-					++windowIndex;
-					return true;
-				},
-
-				getCurrent: function () {
-					return curOutput;
-				},
-			};
-
-		}
-	});
-};
-
-/**
- * Get the first row of the DataFrame.
- */
-DataFrame.prototype.first = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in DataFrame.");
-	}
-
-	return iterator.getCurrent()[1];
-};
-
-/**
- * Get the last row of the DataFrame.
- */
-DataFrame.prototype.last = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in DataFrame.");
-	}
-
-	while (iterator.moveNext()) {
-		; // Don't evaluate current item, it's too expensive.
-	}
-
-	return iterator.getCurrent()[1]; // Return the last item.
-};
-
-/**
- * Get the first index/row pair of the DataFrame.
- */
-DataFrame.prototype.firstPair = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in DataFrame.");
-	}
-
-	return iterator.getCurrent();
-};
-
-/**
- * Get the last index/row pair of the DataFrame.
- */
-DataFrame.prototype.lastPair = function () {
-
-	var self = this;
-
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in DataFrame.");
-	}
-
-	while (iterator.moveNext()) {
-		; // Don't evaluate current item, it's too expensive.
-	}
-
-	return iterator.getCurrent();
-};
-
-/** 
- * Reverse the DataFrame.
- */
-DataFrame.prototype.reverse = function () {
-
-	var self = this;
-	return new DataFrame({
-		columnNames: function () {
-			return self.getColumnNames();
-		},
-		iterable: function () {
-			return new ArrayIterator(
-				E.from(self.getIterator().realize())
-					.reverse()
-					.toArray()
-			);
-		},
-	});
-};
-
 /** 
  * Generate new columns based on existing rows.
  *
- * @param {function} selector - Selector function that transforms each row to a new set of columns.
+ * @param {function|object} generator - Generator function that transforms each row to a new set of columns.
  */
-DataFrame.prototype.generateSeries = function (selector) {
-
-	assert.isFunction(selector, "Expected 'selector' parameter to 'generateSeries' function to be a function.");
+DataFrame.prototype.generateSeries = function (generator) {
 
 	var self = this;
 
@@ -24887,12 +28341,27 @@ DataFrame.prototype.generateSeries = function (selector) {
 	//todo: this should merge on index.
 	//todo: need to be able to override columns on 1 data frame with columns from another.
 
-	var newColumns = self.select(selector);
+	if (!Object.isObject(generator)) {
+		assert.isFunction(generator, "Expected 'generator' parameter to 'DataFrame.generateSeries' function to be a function or an object.");
 
-	return E.from(newColumns.getColumnNames())
-		.aggregate(self, function (prevDataFrame, newColumnName) {
-			return prevDataFrame.setSeries(newColumnName, newColumns.getSeries(newColumnName));
-		});
+		var newColumns = self.select(generator)
+			.bake()
+			;
+
+		return E.from(newColumns.getColumnNames())
+			.aggregate(self, function (prevDataFrame, newColumnName) {
+				return prevDataFrame.withSeries(newColumnName, newColumns.getSeries(newColumnName).bake()).bake();
+			})
+			;
+	}
+	else {
+		var newColumnNames = Object.keys(generator);
+		return E.from(newColumnNames)
+			.aggregate(self, function (prevDataFrame, newColumnName) {
+				return prevDataFrame.withSeries(newColumnName, prevDataFrame.deflate(generator[newColumnName]).bake()).bake();
+			})
+			;
+	}
 };
 
 /** 
@@ -24907,11 +28376,12 @@ DataFrame.prototype.deflate = function (selector) {
 	var self = this;
 
 	return new Series({ 
-			iterable: function () {
+		iterable: {
+			getIterator: function () {
 				return new SelectIterator(
-					self.getIterator(),
+					self.iterable.getIterator(),
 					function (pair) {
-						var newValue = selector(pair[1], pair[0]);
+						var newValue = selector(pair[1]);
 						return [
 							pair[0],
 							newValue
@@ -24919,7 +28389,8 @@ DataFrame.prototype.deflate = function (selector) {
 					}
 				);
 			},
-		});
+		},
+	});
 };
 
 /** 
@@ -24931,40 +28402,12 @@ DataFrame.prototype.deflate = function (selector) {
 DataFrame.prototype.inflateColumn = function (columnNameOrIndex, selector) {
 
 	var self = this;
-	var dataForge = require('../index');
-
 	return self.zip(
 		self.getSeries(columnNameOrIndex).inflate(selector),
 		function (row1, row2) {
 			return extend({}, row1, row2); //todo: this be should zip's default operation.
 		}
 	);
-};
-
-/** 
- * Get X rows from the head of the data frame.
- *
- * @param {int} numRows - Number of rows to take.
- */
-DataFrame.prototype.head = function (numRows) {
-
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'head' function to be a function.");
-
-	var self = this;
-	return self.take(numRows);
-};
-
-/** 
- * Get X rows from the tail of the data frame.
- *
- * @param {int} numRows - Number of rows to take.
- */
-DataFrame.prototype.tail = function (numRows) {
-
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'tail' function to be a function.");
-
-	var self = this;
-	return self.skip(self.count() - numRows);
 };
 
 /**
@@ -24984,7 +28427,7 @@ DataFrame.prototype.aggregate = function (seedOrSelector, selector) {
 		assert.isFunction(selector, "Expected 'selector' parameter to aggregate to be a function.");
 
 		var working = seedOrSelector;
-		var it = self.getIterator();
+		var it = self.iterable.getIterator();
 		while (it.moveNext()) {
 			var curValue = it.getCurrent()[1];
 			working = selector(working, curValue); //todo: should pass index in here as well.
@@ -25013,54 +28456,6 @@ DataFrame.prototype.aggregate = function (seedOrSelector, selector) {
 };
 
 /**
- * Convert the data-frame to a JavaScript object.
- *
- * @param {function} keySelector - Function that selects keys for the resulting object.
- * @param {valueSelector} keySelector - Function that selects values for the resulting object.
- */
-DataFrame.prototype.toObject = function (keySelector, valueSelector) {
-
-	var self = this;
-
-	assert.isFunction(keySelector, "Expected 'keySelector' parameter to toObject to be a function.");
-	assert.isFunction(valueSelector, "Expected 'valueSelector' parameter to toObject to be a function.");
-
-	return E.from(self.toObjects()).toObject(keySelector, valueSelector);
-};
-
-/**
- * Zip together multiple data-frames to produce a new data-frame.
- *
- * @param {...object} dataFrames - Each data-frame that is to be zipped.
- * @param {function} selector - Selector function that produces a new data-frame based on the inputs.
- */
-DataFrame.prototype.zip = function () {
-
-	var dataFrames = E.from(arguments)
-		.takeWhile(function (arg) {
-			return arg && !Object.isFunction(arg);
-		})
-		.toArray();
-
-	assert(dataFrames.length >= 0, "Expected 1 or more 'data-frame' parameters to the zip function.");
-
-	dataFrames = [this].concat(dataFrames);
-
-	var selector = E.from(arguments)
-		.skipWhile(function (arg) {
-			return arg && !Object.isFunction(arg);
-		})
-		.firstOrDefault();
-
-	assert.isFunction(selector, "Expect 'selector' parameter to zip to be a function.");
-
-	var dataForge = require('../index.js');
-	return dataForge.zipDataFrames(dataFrames, function (rows) {
-			return selector.apply(undefined, rows);
-		});
-};
-
-/**
  * Bring the name column to the front, making it the first column in the data-frame.
  *
  * @param {string|array} columnOrColumns - Specifies the column or columns to bring to the front.
@@ -25079,7 +28474,7 @@ DataFrame.prototype.bringToFront = function (columnOrColumns) {
 	}
 
 	var self = this;
-	var existingColumnNames = self.getColumnNames();
+	var existingColumnNames = self.iterable.getColumnNames();
 	var columnsToMove = E.from(columnOrColumns) // Strip out non-existing columns.
 		.where(function (columnName) {
 			return E.from(existingColumnNames).contains(columnName);
@@ -25115,7 +28510,7 @@ DataFrame.prototype.bringToBack = function (columnOrColumns) {
 	}
 
 	var self = this;
-	var existingColumnNames = self.getColumnNames();
+	var existingColumnNames = self.iterable.getColumnNames();
 	var columnsToMove = E.from(columnOrColumns) // Strip out non-existing columns.
 		.where(function (columnName) {
 			return E.from(existingColumnNames).contains(columnName);
@@ -25133,581 +28528,606 @@ DataFrame.prototype.bringToBack = function (columnOrColumns) {
 };
 
 /**
- * Invoke a callback function for each row in the DataFrame.
+ * Reshape (or pivot) a table based on column values.
  *
- * @param {function} callback - The calback to invoke for each row.
+ * @param {string} column - Column name whose values make the new DataFrame's columns.
+ * @param {string} value - Column name whose values populate the new DataFrame's values.
  */
-DataFrame.prototype.forEach = function (callback) {
-	assert.isFunction(callback, "Expected 'callback' parameter to 'forEach' function to be a function.");
-
+DataFrame.prototype.pivot = function (column, value) {
 	var self = this;
-	var iterator = self.getIterator();
-	validateIterator(iterator);
 
-	while (iterator.moveNext()) {
-		var pair = iterator.getCurrent();
-		callback(pair[1], pair[0]);
+	assert.isString(column, "Expected 'column' parameter to DataFrame.pivot to be a string that identifies the column whose values make the new DataFrame's columns.");
+	assert.isString(value, "Expected 'value' parameter to DataFrame.pivot to be a string that identifies the column whose values make the new DataFrame's values.");
+
+	if (!self.hasSeries(column)) {
+		throw new Error("Expected to find a column with name '" + column + "'.");
 	}
 
-	return self;
-};
+	if (!self.hasSeries(value)) {
+		throw new Error("Expected to find a column with name '" + value + "'.");
+	}
 
-/**
- * Group the data-frame into multiple data-frames on the value defined by the selector.
- * A series is returned that indexed by group key. Each value in the series is a Data-frame containing the group.
- *
- * @param {function} selector - Function that selects the value to group by.
- */
-DataFrame.prototype.groupBy = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'groupBy' function to be a function.");
+	var newColumnNames = self.getSeries(column).distinct().toValues();
 
-	//todo: make this lazy.
-
-	var self = this;
-	var groupedPairs = E.from(self.toPairs())
-		.groupBy(function (pair) {
-			return selector(pair[1], pair[0]);
-		})
-		.select(function (group) {
-			return [
-				group.key(),
-				new DataFrame({
-					iterable: function () {
-						return new ArrayIterator(group.getSource());
-					},
-				}),
-			];
+	var newSeries = E.from(newColumnNames) // Create a series for each column
+		.select(function (columnName) {
+			return self
+				.where(function (row) {
+					return row[column] === columnName;
+				})
+				.deflate(function (row) {
+					return row[value];
+				});
 		})
 		.toArray();
 
-	return new Series({
-		iterable: function () {
-			return new ArrayIterator(groupedPairs);
-		},
+	return new DataFrame({
+		columns: E.from(newColumnNames)
+			.zip(newSeries, function (columnName, series) {
+				return [columnName, series];
+			}) 
+			.toObject(
+				function (column) {
+					return column[0];
+				},
+				function (column) {
+					return column[1].toValues();
+				}
+			),
 	});
 };
 
 /**
- * Determine if the predicate returns truthy for all values.
- * Returns false as soon as the predicate evaluates to falsy.
- * Returns true if the predicate returns truthy for all values in the DataFrame.
- * Returns false if the series is empty.
+ * Merge this DataFrame with another.
  *
- * @param {function} predicate - Predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
+ * @param {DataFrame} otherDataFrame - The other DataFrame to merge in.
+ * @param {string} [columnName] - Optional column name used to join the DataFrames. Omit to merge on index.
  */
-DataFrame.prototype.all = function (predicate) {
-	assert.isFunction(predicate, "Expected 'predicate' parameter to 'all' to be a function.")
-
-	var self = this;
-	var iterator = self.getIterator();
-	validateIterator(iterator);
-
-	var count = 0;
-
-	while (iterator.moveNext()) {
-		var pair = iterator.getCurrent();
-		if (!predicate(pair[1], pair[0])) {
-			return false;
-		}
-
-		++count;
+DataFrame.prototype.merge = function (otherDataFrame, columnName) {
+	assert.instanceOf(otherDataFrame, DataFrame, "Expected 'otherDataFrame' parameter of DataFrame.merge to be a DataFrame.");
+	if (columnName) {
+		assert.isString(columnName, "Expected optional 'columnName' parameter of DataFrame.merge to be a string that specifies the column to join the DataFrame on.");
 	}
 
-	return count > 0;
+	var self = this;
+	return mergeDataFrames(self, otherDataFrame, columnName);
 };
 
 /**
- * Determine if the predicate returns truthy for any of the values.
- * Returns true as soon as the predicate returns truthy.
- * Returns false if the predicate never returns truthy.
+ * Returns true if the DataFrame contains the specified row.
  *
- * @param {function} [predicate] - Optional predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
+ * @param {function} row - The row to check for in the DataFrame.
  */
-DataFrame.prototype.any = function (predicate) {
-	if (predicate) {
-		assert.isFunction(predicate, "Expected 'predicate' parameter to 'all' to be a function.")
-	}
+DataFrame.prototype.contains = function (row) {
 
 	var self = this;
-	var iterator = self.getIterator();
-	validateIterator(iterator);
+	var json = JSON.stringify(row); //todo: This feels somewhat dodgey.
 
-	if (!predicate) {
-		return iterator.moveNext();
-	}
-
-	while (iterator.moveNext()) {
-		var pair = iterator.getCurrent();
-		if (predicate(pair[1], pair[0])) {
-			return true;
-		}
-	}
-
-	return false;
-};
-
-/**
- * Determine if the predicate returns truthy for none of the values.
- * Returns true for an empty DataFrame.
- * Returns true if the predicate always returns falsy.
- * Otherwise returns false.
- *
- * @param {function} [predicate] - Optional predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
- */
-DataFrame.prototype.none = function (predicate) {
-	if (predicate) {
-		assert.isFunction(predicate, "Expected 'predicate' parameter to 'all' to be a function.")
-	}
-
-	var self = this;
-	var iterator = self.getIterator();
-	validateIterator(iterator);
-
-	if (!predicate) {
-		return !iterator.moveNext();
-	}
-
-	while (iterator.moveNext()) {
-		var pair = iterator.getCurrent();
-		if (predicate(pair[1], pair[0])) {
-			return false;
-		}
-	}
-
-	return true;
-};
-
-/**
- * Collapse a group of sequential rows with duplicate column values into a Series of windows.
- *
- * @param {function} valueSelector - Selects the value used to compare for duplicates.
- */	
-DataFrame.prototype.sequentialDistinct = function (valueSelector, obsoleteSelector) {
-
-	assert.isFunction(valueSelector, "Expected 'valueSelector' parameter to 'sequentialDistinct' to be a function.")
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
-
-	var self = this;
-
-	return self.variableWindow(function (a, b) {
-			return valueSelector(a) === valueSelector(b);
+	return self.any(function (searchRow) {
+			return JSON.stringify(searchRow) === json;
 		});
 };
 
 /**
- * Collapse distinct rows in the dataframe based on the output of 'valueSelector'.
- *
- * @param {function} valueSelector - Selects the value used to compare for duplicates.
+ * Concatenate multiple other dataframes onto this dataframe.
+ * 
+ * @param {array|DataFrame*} dataFrames - Multiple arguments. Each can be either a dataframe or an array of dataframe. 
  */
-DataFrame.prototype.distinct = function (valueSelector, obsoleteSelector) {
-	
-	assert.isFunction(valueSelector, "Expected 'valueSelector' parameter to 'DataFrame.distinct' to be a function.")
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
+DataFrame.prototype.concat = function () {
 
 	var self = this;
-
-	//todo: make this lazy.
-
-	/* todo: Want to zip here, when zip can specify the index. 
-
-	series.zip(series.skip(1), function (prev, next) { 
-		});
-
-	*/
-
-	var input = E.from(self.toPairs())
-		.select(function (pair) {
-			return {
-				pair: pair,
-				considered: false,
-			};
-		})
-		.toArray();
-
-	var output = [];
-	var windowIndex = 0;
-
-	for (var i = 0; i < input.length; ++i) {
-		var underConsideration = input[i];
-		if (underConsideration.considered) {
-			// Skip this item, it has already been dealt with.
-			continue;
-		}
-
-		var curWindow = [];
-
-		underConsideration.considered = true; // Don't really need to do this, because we never backtrack, but it feels like it makes the code 'complete'.
-		curWindow.push(underConsideration.pair);
-
-		var firstValue = valueSelector(underConsideration.pair[1]);
-
-		for (var j = i+1; j < input.length; ++j) {
-			var underComparison = input[j];
-			if (underComparison.considered) {
-				continue;
-			}
-
-			if (valueSelector(underComparison.pair[1]) === firstValue) {
-				underComparison.considered = true;
-				curWindow.push(underComparison.pair);
-			}
-		}
-
-		var window = new DataFrame({
-			rows: E.from(curWindow)	
-				.select(function (pair) {
-					return pair[1];
-				})
-				.toArray(),
-			index: E.from(curWindow)
-				.select(function (pair) {
-					return pair[0];
+	return concatDataFrames(
+		[self].concat(
+			E.from(arguments)
+				.selectMany(function (argument) {
+					if (Object.isArray(argument)) {
+						return argument;
+					}
+					else {
+						return [argument];
+					}
 				})
 				.toArray()
-		});
-
-		output.push([windowIndex, window]);
-		++windowIndex;
-	}
-
-	return new DataFrame({
-		rows: E.from(output)
-			.select(function (pair) {
-				return pair[1];
-			})
-			.toArray(),
-		index: E.from(output)
-			.select(function (pair) {
-				return pair[0];
-			})
-			.toArray(),
-	});
+		)			
+	);
 };
 
 /**
- * Groups sequential values into variable length 'windows'. The windows can then be transformed/transformed using selectPairs or selectManyPairs.
- *
- * @param {function} comparer - Predicate that compares two rows and returns true if they should be in the same window.
+ * Retreive each row of the dataframe as an array (no column names included)
  */
-DataFrame.prototype.variableWindow = function (comparer, obsoleteSelector) {
-
-	assert.isFunction(comparer, "Expected 'comparer' parameter to 'variableWindow' to be a function.")
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
-
-	var self = this;
-
-	//todo: make this lazy.
-
-	/* todo: Want to zip here, when zip can specify the index. 
-
-	series.zip(series.skip(1), function (prev, next) { 
-		});
-
-	*/
-
-	var input = self.toPairs();
-
-	var output = [];
-
-	if (input.length > 0) {
-
-		var startIndex = 0;
-		var takeAmount = 1;
-		var windowIndex = 0;
-
-		var prevPair = input[0]; // 1st pair.
-
-		for (var i = 1; i < input.length; ++i) {
-
-			var curPair = input[i];
-			
-			if (!comparer(prevPair[1], curPair[1])) {
-
-				// Flush.
-				output.push([windowIndex, self.skip(startIndex).take(takeAmount)]);
-				++windowIndex;
-
-				startIndex = i;
-				takeAmount = 1;
-			}
-			else {
-				++takeAmount;
-			}
-
-			prevPair = curPair;
-		}
-
-		if (takeAmount > 0) {
-			output.push([windowIndex, self.skip(startIndex).take(takeAmount)]);
-		}
-	}
-
-	return new DataFrame({
-			rows: E.from(output)
-				.select(function (pair) {
-					return pair[1];
-				})
-				.toArray(),
-			index: new Index(
-				E.from(output)
-					.select(function (pair) {
-						return pair[0];
-					})
-					.toArray()
-			)
-	});
-};
-
-module.exports = DataFrame;
-},{"../index":3,"../index.js":3,"../src/iterators/count":50,"../src/iterators/empty":51,"../src/iterators/select":55,"../src/iterators/select-many":54,"../src/iterators/take":59,"../src/iterators/take-while":58,"../src/iterators/where":61,"./index":47,"./iterators/array":48,"./iterators/multi":52,"./iterators/pair":53,"./iterators/skip":57,"./iterators/skip-while":56,"./iterators/validate":60,"./series":62,"./utils":63,"babyparse":4,"chai":5,"easy-table":41,"extend":42,"linq":43}],47:[function(require,module,exports){
-'use strict';
-
-var ArrayIterator = require('./iterators/array');
-var SkipIterator = require('./iterators/skip');
-var SkipWhileIterator = require('./iterators/skip-while');
-var TakeIterator = require('../src/iterators/take');
-var TakeWhileIterator = require('../src/iterators/take-while');
-
-var assert = require('chai').assert;
-var E = require('linq');
-
-var validateIterator = require('./iterators/validate');
-
-/**
- * Implements an index for a data frame or column.
- */
-var Index = function (values) {
-
-	var self = this;
-
-	if (Object.isFunction(values)) {
-		self._iterable = values;
-	}
-	else {
-		assert.isArray(values, "Expected 'values' parameter to Index constructor to be an array or an iterable.");
-
-		self._iterable = function () {
-			return new ArrayIterator(values);
-		};
-	}
-
-	assert.isFunction(self._iterable);
-};
-
-/**
- * Get an iterator to iterate the values of the index.
- */
-Index.prototype.getIterator = function () {
-	var self = this;
-	return self._iterable();
-};
-
-/**
- * Skip a number of rows from the index.
- *
- * @param {int} numRows - Number of rows to skip.
- */
-Index.prototype.skip = function (numRows) {
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'skip' function to be a number.");	
-
-	var Index = require('./index');
-
-	var self = this;
-	return new Index(function () {
-		return new SkipIterator(self.getIterator(), numRows);
-	});
-};
-
-/**
- * Take a number of rows from the index.
- *
- * @param {int} numRows - Number of rows to take.
- */
-Index.prototype.take = function (numRows) {
-	assert.isNumber(numRows, "Expected 'numRows' parameter to 'take' function to be a number.");	
-
-	var self = this;
-	return new Index(function () {
-		return new TakeIterator(self.getIterator(), numRows);
-	});
-};
-
-/**
- * Create a new index from a slice of rows.
- *
- * @param {int|function} startIndexOrStartPredicate - Index where the slice starts or a predicate function that determines where the slice starts.
- * @param {int|function} endIndexOrEndPredicate - Marks the end of the slice, one row past the last row to include. Or a predicate function that determines when the slice has ended.
- * @param {function} [predicate] - Optional predicate to compare index against start/end index. Return true to start or stop the slice.
- */
-Index.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPredicate, predicate) {
-
-	var self = this;
-
-	var startIndex;
-	var endIndex;
-	var startPredicate = null;
-	var endPredicate = null;
-
-	if (predicate) {
-		assert.isFunction(predicate, "Expected 'predicate' parameter to slice function to be function.");
-	}
-
-	if (Object.isFunction(startIndexOrStartPredicate)) {
-		startPredicate = startIndexOrStartPredicate;
-	}
-	else {
-		startIndex = startIndexOrStartPredicate;
-		startPredicate = function (value) {
-				return predicate && predicate(value, startIndex) || value < startIndex;
-			};
-	}
-
-	if (Object.isFunction(endIndexOrEndPredicate)) {
-		endPredicate = endIndexOrEndPredicate;
-	}
-	else {
-		endIndex = endIndexOrEndPredicate;
-		endPredicate = function (value) {
-				return predicate && predicate(value, endIndex) || value < endIndex;
-			};
-	}
-
-	return new Index(function () {
-		return new TakeWhileIterator(
-			new SkipWhileIterator(
-				self.getIterator(),
-				startPredicate					
-			),
-			endPredicate
-		)
-	});
-};
-
-/*
- * Extract values from the index. This forces lazy evaluation to complete.
- */
-Index.prototype.toValues = function () {
+DataFrame.prototype.toRows = function () {
 
 	var self = this;
 	var iterator = self.getIterator();
 	validateIterator(iterator);
 
-	var values = [];
+	var rows = [];
+	var columnNames = self.getColumnNames();
 
 	while (iterator.moveNext()) {
-		values.push(iterator.getCurrent());
+		var pair = iterator.getCurrent();
+		var value = pair[1];
+		var row = E.from(columnNames)
+			.select(function (columnName) {
+				return value[columnName];
+			})
+			.toArray();
+		rows.push(row);
 	}
 
-	return values;
+	return rows;
 };
+
+},{"../src/iterators/select":72,"./concat-dataframes":47,"./inherit":50,"./iterables/array":51,"./iterables/select-values":59,"./iterators/array":65,"./iterators/multi":69,"./iterators/validate":77,"./series":79,"./utils":80,"babyparse":5,"chai":6,"easy-table":42,"extend":43,"linq":44}],50:[function(require,module,exports){
+'use strict';
+
+//
+// http://oli.me.uk/2013/06/01/prototypical-inheritance-done-right/
+//
 
 /*
- * Forces lazy evaluation to complete and 'bakes' the index into memory.
- */
-Index.prototype.bake = function () {
-
-	var self = this;
-	return new Index(self.toValues());
-};
-
-/**
- * Count the number of rows in the index.
- */
-Index.prototype.count = function () {
-
-	var self = this;
-	var total = 0;
-	var iterator = self.getIterator();
-
-	while (iterator.moveNext()) {
-		++total;
-	}
-
-	return total;
-};
-
-/**
- * Get the first row of the index.
- */
-Index.prototype.first = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in index.");
-	}
-
-	return iterator.getCurrent();	
-};
-
-/**
- * Get the last row of the index.
- */
-Index.prototype.last = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No rows in index.");
-	}
-
-	var last = iterator.getCurrent();
-
-	while (iterator.moveNext()) {
-		last = iterator.getCurrent();
-	}
-
-	return last;
-};
-
-/** 
- * Reverse the index.
- */
-Index.prototype.reverse = function () {
-
-	var self = this;
-	return new Index(E.from(self.toValues()).reverse().toArray());
-};
-
-/** 
- * Get X values from the head of the index.
+ * Extends one class with another.
  *
- * @param {int} values - Number of values to take.
+ * @param {Function} destination The class that should be inheriting things.
+ * @param {Function} source The parent class that should be inherited from.
+ * @return {Object} The prototype of the parent.
  */
-Index.prototype.head = function (values) {
+function inherit(destination, source) {
+    destination.prototype = Object.create(source.prototype);
+    destination.prototype.constructor = destination;
+    return source.prototype;
+}
 
-	assert.isNumber(values, "Expected 'values' parameter to 'head' function to be a function.");
 
-	var self = this;
-	return self.take(values);
-};
-
-/** 
- * Get X values from the tail of the index.
- *
- * @param {int} values - Number of values to take.
- */
-Index.prototype.tail = function (values) {
-
-	assert.isNumber(values, "Expected 'values' parameter to 'tail' function to be a function.");
-
-	var self = this;
-	return self.skip(self.count() - values);
-};
-
-module.exports = Index;
-},{"../src/iterators/take":59,"../src/iterators/take-while":58,"./index":47,"./iterators/array":48,"./iterators/skip":57,"./iterators/skip-while":56,"./iterators/validate":60,"chai":5,"linq":43}],48:[function(require,module,exports){
+module.exports = inherit;
+},{}],51:[function(require,module,exports){
 'use strict';
+
+var ArrayIterable = function (arr) {
+    var self = this;
+    self._arr = arr;
+};
+
+module.exports = ArrayIterable;
+
+var ArrayIterator = require('../iterators/array');
+
+ArrayIterable.prototype.getIterator = function () {
+    var self = this;
+    return new ArrayIterator(self._arr);
+};
+
+ArrayIterable.prototype.getColumnNames = function () {
+    var self = this;
+    if (self._arr.length <= 0) {
+        return [];
+    }
+    
+    return Object.keys(self._arr);
+};
+},{"../iterators/array":65}],52:[function(require,module,exports){
+'use strict';
+
+var CountIterable = function () {
+};
+
+module.exports = CountIterable;
+
+var CountIterator = require('../iterators/count');
+
+CountIterable.prototype.getIterator = function () {
+    return new CountIterator();
+};
+
+CountIterable.prototype.getColumnNames = function () {
+    return [];
+};
+},{"../iterators/count":67}],53:[function(require,module,exports){
+'use strict';
+
+var EmptyIterable = function () {
+};
+
+module.exports = EmptyIterable;
+
+var EmptyIterator = require('../iterators/empty');
+
+EmptyIterable.prototype.getIterator = function () {
+    return new EmptyIterator();
+};
+
+EmptyIterable.prototype.getColumnNames = function () {
+    return [];
+};
+},{"../iterators/empty":68}],54:[function(require,module,exports){
+'use strict';
+
+var ExtractIterable = function (iterable, arrayIndex) {
+	var self = this;
+    self._iterable = iterable;
+    self._arrayIndex = arrayIndex;
+};
+
+module.exports = ExtractIterable;
+
+var SelectIterator = require('../iterators/select');
+
+ExtractIterable.prototype.getIterator = function () {
+
+    var self = this;
+    return new SelectIterator(
+        self._iterable.getIterator(), 
+        function (arr) {
+            return arr[self._arrayIndex];
+        }
+    );
+};
+
+ExtractIterable.prototype.getColumnNames = function () {
+
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/select":72}],55:[function(require,module,exports){
+'use strict';
+
+var PairsIterable = function (indexIterable, valuesIterable) {
+    var self = this;
+    self._indexIterable = indexIterable;
+    self._valuesIterable = valuesIterable; 
+};
+
+module.exports = PairsIterable;
+
+var PairIterator = require('../iterators/pair');
+
+PairsIterable.prototype.getIterator = function () {
+    var self = this;
+    return new PairIterator(
+        self._indexIterable.getIterator(), 
+        self._valuesIterable.getIterator()
+    );
+};
+
+PairsIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._valuesIterable.getColumnNames();
+};
+},{"../iterators/pair":70}],56:[function(require,module,exports){
+
+'use strict';
+
+var SelectManyPairsIterable = function (iterable, selector) {
+	var self = this;
+    self._iterable = iterable;
+    self._selector = selector;
+};
+
+module.exports = SelectManyPairsIterable;
+
+var SelectManyIterator = require('../iterators/select-many');
+var Series = require('../series');
+var DataFrame = require('../dataframe');
+
+SelectManyPairsIterable.prototype.getIterator = function () {
+
+    var self = this;
+    return new SelectManyIterator(
+        self._iterable.getIterator(), 
+        function (pair) {
+            var newPairs = self._selector(pair[0], pair[1]);
+            if (!Object.isArray(newPairs)) {
+                throw new Error("Expected return value from 'Series.selectManyPairs' selector to be an array of pairs, each item in the array represents a new pair in the resulting series.");
+            }
+
+            for (var pairIndex = 0; pairIndex < newPairs.length; ++pairIndex) {
+                var newPair = newPairs[pairIndex];
+                if (!Object.isArray(newPair) || newPair.length !== 2) {
+                    throw new Error("Expected return value from 'Series.selectManyPairs' selector to be am array of pairs, but item at index " + pairIndex + " is not an array with two items: [index, value].");
+                }
+            }
+
+            return newPairs;
+        }
+    );
+};
+
+SelectManyPairsIterable.prototype.getColumnNames = function () {
+
+    var self = this;
+
+    // Have to get the first element to get field names.
+    var iterator = self._iterable.getIterator();
+
+    for (;;) { // Keep going until we find a non-empty list.
+
+        if (!iterator.moveNext()) {
+            return [];
+        }
+
+        var pair = iterator.getCurrent();
+        var result = self._selector(pair[0], pair[1]);
+        if (result.length > 0) {
+            return Object.keys(result[0][1]); // Extract pair value.
+        }
+    } 
+};
+
+},{"../dataframe":49,"../iterators/select-many":71,"../series":79}],57:[function(require,module,exports){
+
+'use strict';
+
+var SelectManyIterable = function (iterable, selector) {
+	var self = this;
+    self._iterable = iterable;
+    self._selector = selector;
+};
+
+module.exports = SelectManyIterable;
+
+var SelectManyIterator = require('../iterators/select-many');
+var Series = require('../series');
+var DataFrame = require('../dataframe');
+
+SelectManyIterable.prototype.getIterator = function () {
+
+    var self = this;
+    return new SelectManyIterator(
+        self._iterable.getIterator(), 
+        function (pair) {
+            var newValues = self._selector(pair[1]);
+            if (!Object.isArray(newValues) &&
+                !(newValues instanceof Series) &&
+                !(newValues instanceof DataFrame)) {
+                throw new Error("Expected return value from 'Series.selectMany' selector to be an array, a Series or a DataFrame, each item in the data sequence represents a new value in the resulting series.");
+            }
+
+            if (newValues instanceof Series)
+            {
+                newValues = newValues.toValues();
+            }
+
+            var newPairs = [];
+            for (var newValueIndex = 0; newValueIndex < newValues.length; ++newValueIndex) {
+                newPairs.push([pair[0], newValues[newValueIndex]]);
+            }
+
+            return newPairs;
+        }
+    );
+};
+
+SelectManyIterable.prototype.getColumnNames = function () {
+
+    var self = this;
+
+    // Have to get the first element to get field names.
+    var iterator = self._iterable.getIterator();
+
+    for (;;) { // Keep going until we find a non-empty list.
+
+        if (!iterator.moveNext()) {
+            return [];
+        }
+
+        var result = self._selector(iterator.getCurrent()[1]);
+        if (result.length > 0) {
+            return Object.keys(result[0]);
+        }
+    } 
+};
+
+},{"../dataframe":49,"../iterators/select-many":71,"../series":79}],58:[function(require,module,exports){
+
+'use strict';
+
+var SelectPairsIterable = function (iterable, selector) {
+	var self = this;
+    self._iterable = iterable;
+    self._selector = selector;
+};
+
+module.exports = SelectPairsIterable;
+
+var SelectIterator = require('../iterators/select');
+
+SelectPairsIterable.prototype.getIterator = function () {
+
+    var self = this;
+    return new SelectIterator(
+        self._iterable.getIterator(), 
+        function (pair) {
+			var newPair = self._selector(pair[0], pair[1]);
+			if (!Object.isArray(newPair) || newPair.length !== 2) {
+				throw new Error("Expected return value from 'Series.selectPairs' selector to be a pair, that is an array with two items: [index, value].");
+			}
+			return newPair;			
+        }
+    );
+};
+
+SelectPairsIterable.prototype.getColumnNames = function () {
+
+    var self = this;
+
+    // Have to get the first element to get field names.
+    var iterator = self._iterable.getIterator();
+    if (!iterator.moveNext()) {
+        return [];
+    }
+
+    var firstPair = iterator.getCurrent();
+    var transformed = self._selector(firstPair[0], firstPair[1]); // Extract value and get fields.
+    return Object.keys(transformed[1]); 
+};
+
+},{"../iterators/select":72}],59:[function(require,module,exports){
+
+'use strict';
+
+var SelectValuesIterable = function (iterable, selector) {
+	var self = this;
+    self._iterable = iterable;
+    self._selector = selector;
+};
+
+module.exports = SelectValuesIterable;
+
+var SelectIterator = require('../iterators/select'); //todo: could use a special iterator for this.
+
+SelectValuesIterable.prototype.getIterator = function () {
+
+    var self = this;
+    return new SelectIterator(
+        self._iterable.getIterator(), 
+        function (pair) {
+            return [pair[0], self._selector(pair[1])]; // Extract the value.
+        }
+    );
+};
+
+SelectValuesIterable.prototype.getColumnNames = function () {
+
+    var self = this;
+
+    // Have to get the first element to get field names.
+    var iterator = self._iterable.getIterator();
+    if (!iterator.moveNext()) {
+        return [];
+    }
+
+    return Object.keys(self._selector(iterator.getCurrent()[1])); // Extract value and get fields.
+};
+
+},{"../iterators/select":72}],60:[function(require,module,exports){
+'use strict';
+
+var SkipWhileIterable = function (iterable, predicate) {
+	var self = this;
+    self._iterable = iterable;
+    self._predicate = predicate;
+};
+
+module.exports = SkipWhileIterable;
+
+var SkipWhileIterator = require('../iterators/skip-while');
+
+SkipWhileIterable.prototype.getIterator = function () {
+    var self = this;
+    return new SkipWhileIterator(self._iterable.getIterator(), self._predicate);
+};
+
+SkipWhileIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/skip-while":73}],61:[function(require,module,exports){
+'use strict';
+
+var SkipIterable = function (iterable, amount) {
+	var self = this;
+    self._iterable = iterable;
+    self._amount = amount;
+};
+
+module.exports = SkipIterable;
+
+var SkipIterator = require('../iterators/skip');
+
+SkipIterable.prototype.getIterator = function () {
+    var self = this;
+    return new SkipIterator(self._iterable.getIterator(), self._amount);
+};
+
+SkipIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/skip":74}],62:[function(require,module,exports){
+'use strict';
+
+var TakeWhileIterable = function (iterable, predicate) {
+	var self = this;
+    self._iterable = iterable;
+    self._predicate = predicate;
+};
+
+module.exports = TakeWhileIterable;
+
+var TakeWhileIterator = require('../iterators/take-while');
+
+TakeWhileIterable.prototype.getIterator = function () {
+    var self = this;
+    return new TakeWhileIterator(self._iterable.getIterator(), self._predicate);
+};
+
+TakeWhileIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/take-while":75}],63:[function(require,module,exports){
+'use strict';
+
+var TakeIterable = function (iterable, amount) {
+	var self = this;
+    self._iterable = iterable;
+    self._amount = amount;
+};
+
+module.exports = TakeIterable;
+
+var TakeIterator = require('../iterators/take');
+
+TakeIterable.prototype.getIterator = function () {
+    var self = this;
+    return new TakeIterator(self._iterable.getIterator(), self._amount);
+};
+
+TakeIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/take":76}],64:[function(require,module,exports){
+'use strict';
+
+var WhereIterable = function (iterable, predicate) {
+	var self = this;
+    self._iterable = iterable;
+    self._predicate = predicate;
+};
+
+module.exports = WhereIterable;
+
+var WhereIterator = require('../iterators/where');
+
+WhereIterable.prototype.getIterator = function () {
+    var self = this;
+    return new WhereIterator(self._iterable.getIterator(), self._predicate);
+};
+
+WhereIterable.prototype.getColumnNames = function () {
+    var self = this;
+    return self._iterable.getColumnNames();
+};
+
+},{"../iterators/where":78}],65:[function(require,module,exports){
+'use strict';
+
+var assert = require('chai').assert;
 
 //
 // Data-forge enumerator for iterating a standard JavaScript array.
 //
 var ArrayIterator = function (arr) {
 
+	assert.isArray(arr);
+	
 	var self = this;
-
 	var rowIndex = -1;
 	
 	self.moveNext = function () {
@@ -25744,7 +29164,7 @@ var ArrayIterator = function (arr) {
 };
 
 module.exports = ArrayIterator;
-},{}],49:[function(require,module,exports){
+},{"chai":6}],66:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -25752,7 +29172,7 @@ var E = require('linq');
 //
 // An iterator that can step multiple other iterators at once.
 //
-var MultiIterator = function (iterators) {
+var ConcatIterator = function (iterators) {
 
 	var self = this;
 
@@ -25792,8 +29212,8 @@ var MultiIterator = function (iterators) {
 
 };
 
-module.exports = MultiIterator;
-},{"linq":43}],50:[function(require,module,exports){
+module.exports = ConcatIterator;
+},{"linq":44}],67:[function(require,module,exports){
 'use strict';
 
 var CountIterator = function () {
@@ -25819,7 +29239,7 @@ var CountIterator = function () {
 };
 
 module.exports = CountIterator;
-},{}],51:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 'use strict';
 
 /*
@@ -25841,7 +29261,7 @@ var EmptyIterator = function () {
 };
 
 module.exports = EmptyIterator;
-},{}],52:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -25902,7 +29322,7 @@ var MultiIterator = function (iterators) {
 };
 
 module.exports = MultiIterator;
-},{"linq":43}],53:[function(require,module,exports){
+},{"linq":44}],70:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -25955,7 +29375,7 @@ var PairIterator = function (it1, it2) {
 };
 
 module.exports = PairIterator;
-},{"linq":43}],54:[function(require,module,exports){
+},{"linq":44}],71:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -26024,7 +29444,7 @@ var SelectManyIterator = function (iterator, selector) {
 };
 
 module.exports = SelectManyIterator;
-},{"./array":48,"./select":55,"linq":43}],55:[function(require,module,exports){
+},{"./array":65,"./select":72,"linq":44}],72:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -26062,7 +29482,7 @@ var SelectIterator = function (iterator, selector) {
 };
 
 module.exports = SelectIterator;
-},{"linq":43}],56:[function(require,module,exports){
+},{"linq":44}],73:[function(require,module,exports){
 'use strict';
 
 //
@@ -26099,7 +29519,7 @@ var SkipWhileIterator = function (iterator, predicate) {
 };
 
 module.exports = SkipWhileIterator;
-},{}],57:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 'use strict';
 
 //
@@ -26123,7 +29543,7 @@ var SkipIterator = function (iterator, skipAmount) {
 };
 
 module.exports = SkipIterator;
-},{}],58:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict';
 
 //
@@ -26158,7 +29578,7 @@ var TakeWhileIterator = function (iterator, predicate) {
 };
 
 module.exports = TakeWhileIterator;
-},{}],59:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 'use strict';
 
 //
@@ -26182,7 +29602,7 @@ var TakeIterator = function (iterator, takeAmount) {
 };
 
 module.exports = TakeIterator;
-},{}],60:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 var assert = require('chai').assert;
@@ -26195,7 +29615,7 @@ module.exports = function (iterator) {
 	assert.isFunction(iterator.moveNext, "Expected iterator to have function 'moveNext'.");
 	assert.isFunction(iterator.getCurrent, "Expected iterator to have function 'getCurrent'.");
 };
-},{"chai":5}],61:[function(require,module,exports){
+},{"chai":6}],78:[function(require,module,exports){
 'use strict';
 
 //
@@ -26238,7 +29658,7 @@ var WhereIterator = function (iterator, predicate) {
 };
 
 module.exports = WhereIterator;
-},{}],62:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 // 
@@ -26250,7 +29670,6 @@ var E = require('linq');
 var moment = require('moment');
 var ArrayIterator = require('./iterators/array');
 var validateIterator = require('./iterators/validate');
-var Index = require('./index');
 var SkipIterator = require('./iterators/skip');
 var SkipWhileIterator = require('./iterators/skip-while');
 var TakeIterator = require('../src/iterators/take');
@@ -26261,89 +29680,132 @@ var PairIterator = require('../src/iterators/pair');
 var WhereIterator = require('../src/iterators/where');
 var CountIterator = require('../src/iterators/count');
 var EmptyIterator = require('../src/iterators/empty');
+var PairsIterable = require('../src/iterables/pairs');
+var SelectValuesIterable = require('../src/iterables/select-values');
+var ArrayIterable = require('../src/iterables/array');
+var EmptyIterable = require('../src/iterables/empty');
+var CountIterable = require('../src/iterables/count');
+var ExtractIterable = require('../src/iterables/extract');
+var SkipIterable = require('../src/iterables/skip');
+var SkipWhileIterable = require('../src/iterables/skip-while');
+var TakeIterable = require('../src/iterables/take');
+var TakeWhileIterable = require('../src/iterables/take-while');
+var WhereIterable = require('../src/iterables/where');
+var SelectPairsIterable = require('../src/iterables/select-pairs');
+var extend = require('extend');
 
-/**
- * Represents a time series.
- */
+
+//
+// Create an iterable for use as an index.
+//
+var createIndexIterable = function (index) {
+	if (!index) {
+		return new CountIterable();
+	}
+	else if (Object.isFunction(index)) {
+		return {
+			getIterator: index,
+		};
+	}
+	else if (Object.isArray(index)) {
+		return new ArrayIterable(index);
+	}
+	else {		
+		return new ExtractIterable(index, 1);
+	}
+};
+
+//
+// Create an iterable from values.
+//
+var createValuesIterable = function (values) {
+	if (!values) {
+		return new EmptyIterable(); 
+	}
+	else if (Object.isFunction(values)) {
+		return {
+			getIterator: values,
+		};
+	}
+	else if (Object.isArray(values)) {
+		return new ArrayIterable(values);
+	}
+	else {
+		return values;
+	}
+};
+
+//
+// Represents a time series.
+//
 var Series = function (config) {
 
 	var self = this;
 
+	if (!self.Constructor) {
+		self.Constructor = Series;
+	}
+
 	if (!config) {
-		self.getIterator = function () {
-			return new EmptyIterator();
-		};
+		self.iterable = new EmptyIterable();
 		return;
 	}
 
-	if (config && config.iterable) {
-		assert.isFunction(config.iterable);
+	if (Object.isObject(config)) {	
+		
+		if (config.iterable) {
+			assert.isObject(config.iterable, "Expect 'iterable' field of 'config' parameter to Series constructor to be an object that implements getIterator and getColumnNames.");
+			assert.isFunction(config.iterable.getIterator, "Expect 'iterable' field of 'config' parameter to Series constructor to be an object that implements getIterator and getColumnNames.");
 
-		self.getIterator = config.iterable;
-		return;
-	}
-
-	if (!config.values) {
-		throw new Error("Expected 'values' field to be set on 'config' parameter to Series constructor.");
-	}
-
-	if (!Object.isFunction(config.values)) {
-		assert.isArray(config.values, "Expected 'values' field of 'config' parameter to Series constructor be an array of values or a function that returns an iterator.");
-	}
-
-	if (config.index) {
-		if (!Object.isArray(config.index)) {
-			assert.isObject(config.index, "Expected 'index' field of 'config' parameter to Series constructor to be an array of values or an Index object.");
+			// Setting the inner iterable directly.
+			// Power to you!
+			self.iterable = config.iterable;
+			return;
 		}
-	}
 
-	var values = config.values;
+		if (config.values) {
+			if (!Object.isFunction(config.values) && !Object.isArray(config.values)) {
+				assert.isObject(config.values, "Expected 'values' field of 'config' parameter to Series constructor be an array of values, a function that returns an iterator or an iterable.");
+				assert.isFunction(config.values.getIterator, "Expected 'values' field of 'config' parameter to Series constructor be an array of values, a function that returns an iterator or an iterable.");
+			}
+		}
 
-	if (!config.index) {
-		// Index not supplied.
-		// Generate an index.
-		if (Object.isFunction(values)) {
-			self.getIterator = function () {
-				return new PairIterator(new CountIterator(), values());
-			};
+		if (config.index) {
+			if (!Object.isFunction(config.index) && !Object.isArray(config.index)) {
+				assert.isObject(config.index, "Expected 'index' field of 'config' parameter to Series constructor to be an array, function that returns an iterator, Series, DataFrame or iterable.");
+				assert.isFunction(config.index.getIterator, "Expected 'index' field of 'config' parameter to Series constructor to be an array, function that returns an iterator, Series, DataFrame or iterable.");
+			}
 		}
-		else {
-			self.getIterator = function () {
-				return new PairIterator(new CountIterator(), new ArrayIterator(values));
-			};
-		}
-		return;
-	}
 
-	var index = config.index;
-
-	if (Object.isArray(index)) {
-		if (Object.isFunction(values)) {
-			return new PairIterator(new ArrayIterator(index), values());
-		}
-		else {
-			self.getIterator = function () {
-				return new PairIterator(new ArrayIterator(index), new ArrayIterator(values));
-			};			
-		}
+		self.iterable = new PairsIterable(
+			createIndexIterable(config.index), 
+			createValuesIterable(config.values)
+		);
 	}
 	else {
-		if (Object.isFunction(values)) {
-			return new PairIterator(index.getIterator(), values());
-		}
-		else {
-			self.getIterator = function () {
-				return new PairIterator(index.getIterator(), new ArrayIterator(values));
-			};			
-		}
+		assert.isArray(config, "Expected 'config' parameter to Series or DataFrame constructor to be an array of values or a configuration object with options for initialisation.");
+
+		self.iterable = new PairsIterable(
+			new CountIterable(),
+			new ArrayIterable(config)
+		);
 	}
 };
 
+module.exports = Series;
+
+var concatSeries = require('./concat-series');
+var DataFrame = require('./dataframe');
+var zip = require('./zip');
+var SelectManyIterable = require('../src/iterables/select-many');
+var SelectManyPairsIterable = require('../src/iterables/select-many-pairs');
+
 /**
- * Get an iterator for the iterating the values of the series.
+ * Get an iterator for index & values of the series.
  */
 Series.prototype.getIterator = function () {
-	return new EmptyIterator(); // This is redefined by the constructor.
+	var self = this;
+	return self.iterable.getIterator();
 };
 
 /**
@@ -26351,13 +29813,49 @@ Series.prototype.getIterator = function () {
  */
 Series.prototype.getIndex = function () {
 	var self = this;
-	return new Index(function () {		
-		return new SelectIterator(
-			self.getIterator(),
-			function (pair) {
-				return pair[0]; // Extract index.
-			}
-		);
+	return new Series({
+		values: new ExtractIterable(self.iterable, 0), // Extract the index. 
+	});
+};
+
+/**
+ * Apply a new index to the Series.
+ * 
+ * @param {array|Series} newIndex - The new index to apply to the Series.
+ */
+Series.prototype.withIndex = function (newIndex) {
+
+	if (!Object.isArray(newIndex)) {
+		assert.isObject(newIndex, "'Expected 'newIndex' parameter to 'Series.withIndex' to be an array, Series or DataFrame.");
+		assert.isFunction(newIndex.getIterator, "'Expected 'newIndex' parameter to 'Series.withIndex' to be an array, Series or DataFrame.");
+	}
+
+	var self = this;
+	var indexIterable = Object.isArray(newIndex)
+		? new ArrayIterable(newIndex)
+		: new ExtractIterable(newIndex, 1) // Extract index value.
+		;
+	var pairsIterable = new PairsIterable(
+		indexIterable,
+		new ExtractIterable(self.iterable, 1) // Extract value.
+	);
+
+	return new self.Constructor({
+		iterable: pairsIterable,
+	});
+};
+
+/**
+ * Reset the index of the data frame back to the default sequential integer index.
+ */
+Series.prototype.resetIndex = function () {
+
+	var self = this;
+	return new self.Constructor({
+		iterable: new PairsIterable(
+			new CountIterable(),		 // Reset index.
+			new ExtractIterable(self.iterable, 1) // Extract value.
+		),
 	});
 };
 
@@ -26370,10 +29868,8 @@ Series.prototype.skip = function (numRows) {
 	assert.isNumber(numRows, "Expected 'numRows' parameter to 'skip' function to be a number.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new SkipIterator(self.getIterator(), numRows);
-		},		
+	return new self.Constructor({
+		iterable: new SkipIterable(self.iterable, numRows), 
 	}); 	
 };
 
@@ -26386,14 +29882,10 @@ Series.prototype.skipWhile = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'skipWhile' function to be a predicate function that returns true/false.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new SkipWhileIterator(self.getIterator(), 
-				function (pair) {
-					return predicate(pair[1]);
-				}
-			);
-		},
+	return new self.Constructor({
+		iterable: new SkipWhileIterable(self.iterable, function (pair) {
+			return predicate(pair[1]);
+		}),
 	}); 	
 };
 
@@ -26420,10 +29912,8 @@ Series.prototype.take = function (numRows) {
 	assert.isNumber(numRows, "Expected 'numRows' parameter to 'take' function to be a number.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new TakeIterator(self.getIterator(), numRows);
-		},
+	return new self.Constructor({
+		iterable: new TakeIterable(self.iterable, numRows),
 	});
 };
 
@@ -26436,14 +29926,10 @@ Series.prototype.takeWhile = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'takeWhile' function to be a predicate function that returns true/false.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new TakeWhileIterator(self.getIterator(), 
-				function (pair) {
-					return predicate(pair[1]);
-				}
-			);
-		},
+	return new self.Constructor({
+		iterable: new TakeWhileIterable(self.iterable, function (pair) {
+			return predicate(pair[1]);
+		}),
 	}); 	
 };
 
@@ -26464,22 +29950,19 @@ Series.prototype.takeUntil = function (predicate) {
 /**
  * Filter a series by a predicate selector.
  *
- * @param {function} filterSelectorPredicate - Predicte function to filter rows of the series.
+ * @param {function} predicate - Predicte function to filter rows of the series.
  */
-Series.prototype.where = function (filterSelectorPredicate) {
-	assert.isFunction(filterSelectorPredicate, "Expected 'filterSelectorPredicate' parameter to 'where' function to be a function.");
+Series.prototype.where = function (predicate) {
+	assert.isFunction(predicate, "Expected 'predicate' parameter to 'where' function to be a function.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new WhereIterator(self.getIterator(), 
-				function (pair) {
-					return filterSelectorPredicate(pair[1]);
-				}
-			);
-		},
+	return new self.Constructor({
+		iterable: new WhereIterable(self.iterable, function (pair) {
+			return predicate(pair[1]);
+		}),
 	}); 	
 };
+
 
 /**
  * Generate a new series based on the results of the selector function.
@@ -26490,14 +29973,8 @@ Series.prototype.select = function (selector) {
 	assert.isFunction(selector, "Expected 'selector' parameter to 'select' function to be a function.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new SelectIterator(self.getIterator(), 
-				function (pair) {
-					return [pair[0], selector(pair[1], pair[0])];
-				}
-			);
-		},		
+	return new self.Constructor({
+		iterable: new SelectValuesIterable(self.iterable, selector),
 	}); 	
 };
 
@@ -26510,18 +29987,8 @@ Series.prototype.selectPairs = function (selector) {
 	assert.isFunction(selector, "Expected 'selector' parameter to 'selectPairs' function to be a function.");
 
 	var self = this;
-	return new Series({
-		iterable: function () {
-			return new SelectIterator(self.getIterator(), 
-				function (pair) {
-					var newPair = selector(pair[1], pair[0]);
-					if (!Object.isArray(newPair) || newPair.length !== 2) {
-						throw new Error("Expected return value from 'Series.selectPairs' selector to be a pair, that is an array with two items: [index, value].");
-					}
-					return newPair;
-				}
-			);
-		},		
+	return new self.Constructor({
+		iterable: new SelectPairsIterable(self.iterable, selector),
 	}); 	
 };
 
@@ -26534,25 +30001,8 @@ Series.prototype.selectMany = function (selector) {
 	assert.isFunction(selector, "Expected 'selector' parameter to 'Series.selectMany' function to be a function.");
 
 	var self = this;
-
-	return new Series({
-		iterable: function () {
-			return new SelectManyIterator(self.getIterator(), 
-				function (pair) {
-					var newValues = selector(pair[1], pair[0]);
-					if (!Object.isArray(newValues)) {
-						throw new Error("Expected return value from 'Series.selectMany' selector to be an array, each item in the array represents a new value in the resulting series.");
-					}
-
-					var newPairs = [];
-					for (var newValueIndex = 0; newValueIndex < newValues.length; ++newValueIndex) {
-						newPairs.push([pair[0], newValues[newValueIndex]]);
-					}
-
-					return newPairs;
-				}
-			);
-		},
+	return new self.Constructor({
+		iterable: new SelectManyIterable(self.iterable, selector),
 	}); 	
 };
 
@@ -26566,26 +30016,8 @@ Series.prototype.selectManyPairs = function (selector) {
 
 	var self = this;
 
-	return new Series({
-		iterable: function () {
-			return new SelectManyIterator(self.getIterator(), 
-				function (pair) {
-					var newPairs = selector(pair[1], pair[0]);
-					if (!Object.isArray(newPairs)) {
-						throw new Error("Expected return value from 'Series.selectManyPairs' selector to be an array of pairs, each item in the array represents a new pair in the resulting series.");
-					}
-
-					for (var pairIndex = 0; pairIndex < newPairs.length; ++pairIndex) {
-						var newPair = newPairs[pairIndex];
-						if (!Object.isArray(newPair) || newPair.length !== 2) {
-							throw new Error("Expected return value from 'Series.selectManyPairs' selector to be am array of pairs, but item at index " + pairIndex + " is not an array with two items: [index, value].");
-						}
-					}
-
-					return newPairs;
-				}
-			);
-		},
+	return new self.Constructor({
+		iterable: new SelectManyPairsIterable(self.iterable, selector),
 	}); 	
 };
 
@@ -26634,9 +30066,15 @@ var executeOrderBy = function (self, batch) {
 			.toArray();
 	};
 
-	return new Series({
-		iterable: function () {
-			return new ArrayIterator(executeLazySort());
+	return new self.Constructor({
+		iterable: {
+			getIterator: function () {
+				return new ArrayIterator(executeLazySort());
+			},
+
+			getColumnNames: function () {
+				return self.iterable.getColumnNames();
+			},
 		},
 	});
 };
@@ -26689,28 +30127,6 @@ var orderThenBy = function (self, batch, nextSortMethod) {
 };
 
 /**
- * Sorts the series by value (ascending). 
- */
-Series.prototype.order = function () {
-
-	var self = this;
-	return orderBy(self, 'orderBy', function (value) { 
-		return value; 
-	});
-};
-
-/**
- * Sorts the series by value (descending). 
- */
-Series.prototype.orderDescending = function (optionalSortSelector) {
-
-	var self = this;
-	return orderBy(self, 'orderByDescending', function (value) {
-		return value;
-	});
-};
-
-/**
  * Sorts the series by sort selector (ascending). 
  * 
  * @param {function} sortSelector - An function to select a value to sort by.
@@ -26760,7 +30176,7 @@ Series.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPred
 	else {
 		startIndex = startIndexOrStartPredicate;
 		startPredicate = function (value) {
-				return predicate && predicate(value, startIndex) || value < startIndex;
+				return predicate ? predicate(value, startIndex) : value !== startIndex;
 			};
 	}
 
@@ -26770,24 +30186,30 @@ Series.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPred
 	else {
 		endIndex = endIndexOrEndPredicate;
 		endPredicate = function (value) {
-				return predicate && predicate(value, endIndex) || value < endIndex;
+				return predicate ? predicate(value, endIndex) : value !== endIndex;
 			};
 	}
 
-	return new Series({
-		iterable: function () {
-			return new TakeWhileIterator(
-				new SkipWhileIterator(
-					self.getIterator(),
+	return new self.Constructor({
+		iterable: {
+			getIterator: function () {
+				return new TakeWhileIterator(
+					new SkipWhileIterator(
+						self.iterable.getIterator(),
+						function (pair) {
+							return startPredicate(pair[0]); // Check index for start condition.
+						}
+					),
 					function (pair) {
-						return startPredicate(pair[0]); // Check index for start condition.
+						return endPredicate(pair[0]); // Check index for end condition.
 					}
-				),
-				function (pair) {
-					return endPredicate(pair[0]); // Check index for end condition.
-				}
-			);
-		},		
+				);
+			},
+
+			getColumnNames: function () {
+				return self.iterable.getColumnNames();
+			},
+		},
 	});
 };
 
@@ -26805,31 +30227,32 @@ Series.prototype.window = function (period, obsoleteSelector) {
 	var self = this;
 
 	return new Series({
-		iterable: function () {
+		iterable: {
+			getIterator: function () {
 
-			var curOutput = undefined;
-			var windowIndex = 0;
+				var curOutput = undefined;
+				var windowIndex = 0;
 
-			return {
-				moveNext: function () {
-					var window = self.skip(windowIndex*period).take(period);
-					if (window.none(function () { return true; })) { //todo: Shouldn't have to pass a predicate.
-						return false; // Nothing left.
-					}
+				return {
+					moveNext: function () {
+						var window = self.skip(windowIndex*period).take(period);
+						if (window.none(function () { return true; })) { //todo: Shouldn't have to pass a predicate.
+							return false; // Nothing left.
+						}
 
-					curOutput = [
-						windowIndex, 
-						window,						
-					];
-					++windowIndex;
-					return true;
-				},
+						curOutput = [
+							windowIndex, 
+							window,						
+						];
+						++windowIndex;
+						return true;
+					},
 
-				getCurrent: function () {
-					return curOutput;
-				},
-			};
-
+					getCurrent: function () {
+						return curOutput;
+					},
+				};
+			},
 		}
 	});	
 };
@@ -26848,83 +30271,34 @@ Series.prototype.rollingWindow = function (period, obsoleteSelector) {
 	var self = this;
 
 	return new Series({
-		iterable: function () {
+		iterable: { 
+			getIterator: function () {
 
-			var curOutput = undefined;
-			var done = false;
-			var windowIndex = 0;
+				var curOutput = undefined;
+				var done = false;
+				var windowIndex = 0;
 
-			return {
-				moveNext: function () {
-					var window = self.skip(windowIndex).take(period);
-					if (window.count() < period) {
-						return false;
-					}
+				return {
+					moveNext: function () {
+						var window = self.skip(windowIndex).take(period);
+						if (window.count() < period) {
+							return false;
+						}
 
-					curOutput = [
-						windowIndex, 
-						window,						
-					];
-					++windowIndex;
-					return true;
-				},
+						curOutput = [
+							windowIndex, 
+							window,						
+						];
+						++windowIndex;
+						return true;
+					},
 
-				getCurrent: function () {
-					return curOutput;
-				},
-			};
-
-		}
-	});
-};
-
-/**
- * Create a new series, reindexed from this series.
- *
- * @param {index} newIndex - The index used to generate the new series.
- */
-Series.prototype.reindex = function (newIndex) {
-	assert.isObject(newIndex, "Expected 'newIndex' parameter to 'reindex' function to be an index.");
-
-	var self = this;
-
-	return new Series({
-		iterable: function () {
-			//
-			// Generate a map to relate an index value to a series value.
-			//
-			var indexMap = {};
-			var indexExists = {};
-
-			E.from(self.getIndex().toValues())
-				.zip(self.toValues(), 
-					function (indexValue, seriesValue) {
-						return [indexValue, seriesValue];
-					}
-				)
-				.toArray()
-				.forEach(function (pair) {
-					var index = pair[0];
-					var value = pair[1];
-
-					if (indexExists[index]) {
-						throw new Error("Duplicate index detected, failed to 'reindex'");
-					}
-
-					indexMap[index] = value;
-					indexExists[index] = true;
-				});
-
-			//
-			// Return the series values in the order specified by the new index.
-			//
-			return new ArrayIterator(E.from(newIndex.toValues())
-				.select(function (newIndexValue) {
-					return [newIndexValue, indexMap[newIndexValue]];
-				})
-				.toArray()
-			);
-		},		
+					getCurrent: function () {
+						return curOutput;
+					},
+				};
+			},
+		},
 	});
 };
 
@@ -26964,7 +30338,7 @@ Series.prototype.percentChange = function () {
 	var self = this;
 	return self
 		.rollingWindow(2)
-		.selectPairs(function (window) {
+		.selectPairs(function (windowIndex, window) {
 			var values = window.toValues();
 			var amountChange = values[1] - values[0]; // Compute amount of change.
 			var pctChange = amountChange / values[0]; // Compute % change.
@@ -26983,7 +30357,7 @@ Series.prototype.parseInts = function () {
 			return undefined;
 		}
 		else {
-			assert.isString(value, "Called parseInt on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
+			assert.isString(value, "Called parseInts on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
 
 			if (value.length === 0) {
 				return undefined;
@@ -27005,7 +30379,7 @@ Series.prototype.parseFloats = function () {
 			return undefined;
 		}
 		else {
-			assert.isString(value, "Called parseInt on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
+			assert.isString(value, "Called parseFloats on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
 
 			if (value.length === 0) {
 				return undefined;
@@ -27033,7 +30407,7 @@ Series.prototype.parseDates = function (formatString) {
 			return undefined;
 		}
 		else {
-			assert.isString(value, "Called parseInt on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
+			assert.isString(value, "Called parseDates on series, expected all values in the series to be strings, instead found a '" + typeof(value) + "' at index " + valueIndex);
 
 			if (value.length === 0) {
 				return undefined;
@@ -27083,10 +30457,9 @@ Series.prototype.detectTypes = function () {
 
 	var self = this;
 
-	var DataFrame = require('./dataframe');
 	return new DataFrame({
 		columnNames: ["Type", "Frequency"],
-		rows: function () { //todo: make this properly lazy.
+		values: function () { //todo: make this properly lazy.
 			var values = self.toValues();
 			var totalValues = values.length;
 
@@ -27134,10 +30507,9 @@ Series.prototype.detectValues = function () {
 
 	var self = this;
 
-	var DataFrame = require('./dataframe');
 	return new DataFrame({
 		columnNames: ["Value", "Frequency"],
-		rows: function () {
+		values: function () {
 			var values = self.toValues();
 			var totalValues = values.length;
 
@@ -27204,7 +30576,10 @@ Series.prototype.toValues = function () {
 	var values = [];
 
 	while (iterator.moveNext()) {
-		values.push(iterator.getCurrent()[1]);
+		var value = iterator.getCurrent()[1]; // Extract value.
+		if (value !== undefined) {
+			values.push(value);
+		}
 	}
 
 	return values;
@@ -27216,12 +30591,25 @@ Series.prototype.toValues = function () {
 Series.prototype.bake = function () {
 
 	var self = this;
+	if (self._baked) {
+		// Already baked, just return self.
+		return self;
+	}
+
 	var pairs = self.toPairs();
-	return new Series({
-		iterable: function () {
-			return new ArrayIterator(pairs);
-		},
+	var baked = new self.Constructor({
+		iterable: {
+			getIterator: function () {
+				return new ArrayIterator(pairs);
+			},
+
+			getColumnNames: function () {
+				return self.iterable.getColumnNames();
+			},
+		}
 	});
+	baked._baked = true;
+	return baked;
 };
 
 /**
@@ -27236,7 +30624,10 @@ Series.prototype.toPairs = function () {
 	var pairs = [];
 
 	while (iterator.moveNext()) {
-		pairs.push(iterator.getCurrent());
+		var pair = iterator.getCurrent();
+		if (pair[1] !== undefined) {
+			pairs.push(pair);
+		}		
 	}
 
 	return pairs;
@@ -27270,7 +30661,7 @@ Series.prototype.first = function () {
 		throw new Error("No values in Series.");
 	}
 
-	return iterator.getCurrent()[1];
+	return iterator.getCurrent()[1]; // Extract value.
 };
 
 /**
@@ -27326,17 +30717,64 @@ Series.prototype.lastPair = function () {
 	return iterator.getCurrent();
 };
 
+/**
+ * Get the first index of the Series.
+ */
+Series.prototype.firstIndex = function () {
+
+	var self = this;
+	var iterator = self.getIterator();
+
+	if (!iterator.moveNext()) {
+		throw new Error("No values in Series.");
+	}
+
+	return iterator.getCurrent()[0]; // Extract index.
+};
+
+/**
+ * Get the last index of the Series.
+ */
+Series.prototype.lastIndex = function () {
+
+	var self = this;
+	var iterator = self.getIterator();
+
+	if (!iterator.moveNext()) {
+		throw new Error("No values in Series.");
+	}
+
+	while (iterator.moveNext()) {
+		; // Don't evaluate each item, it's too expensive.
+	}
+
+	return iterator.getCurrent()[0]; // Extract index.
+};
+
 /** 
  * Reverse the series.
  */
 Series.prototype.reverse = function () {
 
 	var self = this;
+	return new self.Constructor({
+		iterable: {
+			getIterator: function () {
+				var pairs = [];
+				var iterator = self.iterable.getIterator();
 
-	return new Series({
-			values: E.from(self.toValues()).reverse().toArray(),
-			index: self.getIndex().reverse(),
-		});
+				while (iterator.moveNext()) {
+					pairs.push(iterator.getCurrent());
+				}
+
+				return new ArrayIterator(pairs.reverse());
+			},
+
+			getColumnNames: function () {
+				return self.iterable.getColumnNames();
+			},
+		}
+	});
 };
 
 /** 
@@ -27357,11 +30795,8 @@ Series.prototype.inflate = function (selector) {
 		}
 	}
 
-	var DataFrame = require('./dataframe');
 	return new DataFrame({
-		iterable: function () {
-			return self.select(selector).getIterator();
-		},
+		iterable: new SelectValuesIterable(self.iterable, selector),
 	});
 };
 
@@ -27397,6 +30832,10 @@ Series.prototype.tail = function (values) {
 Series.prototype.sum = function () {
 
 	var self = this;
+	if (self.none()) {
+		return 0;
+	}
+
 	return self.aggregate(
 		function (prev, value) {
 			return prev + value;
@@ -27410,7 +30849,13 @@ Series.prototype.sum = function () {
 Series.prototype.average = function () {
 
 	var self = this;
-	return self.sum() / self.count();
+	var count = self.count();
+	if (count > 0) {
+		return self.sum() / count;
+	}
+	else {
+		return 0;
+	}
 };
 
 /**
@@ -27456,7 +30901,7 @@ Series.prototype.aggregate = function (seedOrSelector, selector) {
 		assert.isFunction(selector, "Expected 'selector' parameter to aggregate to be a function.");
 
 		var working = seedOrSelector;
-		var it = self.getIterator();
+		var it = self.iterable.getIterator();
 		while (it.moveNext()) {
 			var curValue = it.getCurrent()[1];
 			working = selector(working, curValue); //todo: should pass index in here as well.
@@ -27483,12 +30928,14 @@ Series.prototype.toObject = function (keySelector, valueSelector) {
 };
 
 /**
- * Zip together multiple series to produce a new series.
+ * Zip together multiple series or dataframes to produce a new series or dataframe.
  *
- * @param {...series} series - Each series that is to be zipped.
- * @param {function} selector - Selector function that produces a new series based on the inputs.
+ * @param {...series|dataframe} series|dataframe - Each series or dataframe that is to be zipped.
+ * @param {function} selector - Selector function that produces a new series or dataframe based on the inputs.
  */
 Series.prototype.zip = function () {
+
+	var self = this;
 
 	var inputSeries = E.from(arguments)
 		.takeWhile(function (arg) {
@@ -27496,7 +30943,7 @@ Series.prototype.zip = function () {
 		})
 		.toArray();
 
-	assert(inputSeries.length >= 0, "Expected 1 or more 'series' parameters to the zip function.");
+	assert(inputSeries.length >= 0, "Expected 1 or more 'series' or 'dataframe' parameters to the Series.zip function.");
 
 	inputSeries = [this].concat(inputSeries);
 
@@ -27506,12 +30953,15 @@ Series.prototype.zip = function () {
 		})
 		.firstOrDefault();
 
-	assert.isFunction(selector, "Expect 'selector' parameter to zip to be a function.");
+	assert.isFunction(selector, "Expect 'selector' parameter to Series.zip to be a function.");
 
-	var dataForge = require('../index.js');
-	return dataForge.zipSeries(inputSeries, function (values) {
-			return selector.apply(undefined, values);
-		});
+	return zip(
+		inputSeries, 
+		function (series) {
+			return selector.apply(undefined, series.toValues());
+		},
+		self.Constructor
+	);
 };
 
 /**
@@ -27532,7 +30982,9 @@ Series.prototype.forEach = function (callback) {
 	}
 
 	return self;
-};/**
+};
+
+/**
  * Determine if the predicate returns truthy for all values.
  * Returns false as soon as the predicate evaluates to falsy.
  * Returns true if the predicate returns truthy for all values in the Series.
@@ -27544,14 +30996,14 @@ Series.prototype.all = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'all' to be a function.")
 
 	var self = this;
-	var iterator = self.getIterator();
+	var iterator = self.iterable.getIterator();
 	validateIterator(iterator);
 
 	var count = 0;
 
 	while (iterator.moveNext()) {
 		var pair = iterator.getCurrent();
-		if (!predicate(pair[1], pair[0])) {
+		if (!predicate(pair[1])) {
 			return false;
 		}
 
@@ -27574,7 +31026,7 @@ Series.prototype.any = function (predicate) {
 	}
 
 	var self = this;
-	var iterator = self.getIterator();
+	var iterator = self.iterable.getIterator();
 	validateIterator(iterator);
 
 	if (!predicate) {
@@ -27583,7 +31035,7 @@ Series.prototype.any = function (predicate) {
 
 	while (iterator.moveNext()) {
 		var pair = iterator.getCurrent();
-		if (predicate(pair[1], pair[0])) {
+		if (predicate(pair[1])) {
 			return true;
 		}
 	}
@@ -27600,12 +31052,13 @@ Series.prototype.any = function (predicate) {
  * @param {function} [predicate] - Optional predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
  */
 Series.prototype.none = function (predicate) {
+
 	if (predicate) {
 		assert.isFunction(predicate, "Expected 'predicate' parameter to 'none' to be a function.")
 	}
 
 	var self = this;
-	var iterator = self.getIterator();
+	var iterator = self.iterable.getIterator();
 	validateIterator(iterator);
 
 	if (!predicate) {
@@ -27614,7 +31067,7 @@ Series.prototype.none = function (predicate) {
 
 	while (iterator.moveNext()) {
 		var pair = iterator.getCurrent();
-		if (predicate(pair[1], pair[0])) {
+		if (predicate(pair[1])) {
 			return false;
 		}
 	}
@@ -27624,24 +31077,45 @@ Series.prototype.none = function (predicate) {
 
 /**
  * Group sequential duplicate values into a Series of windows.
+ *
+ * @param {function} selector - Selects the value used to compare for duplicates.
  */
-Series.prototype.sequentialDistinct = function (obsoleteSelector) {
+Series.prototype.sequentialDistinct = function (selector) {
 	
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
+	if (selector) {
+		assert.isFunction(selector, "Expected 'selector' parameter to 'Series.sequentialDistinct' to be a selector function that determines the value to compare for duplicates.")
+	}
+	else {
+		selector = function (value) {
+			return value;
+		};
+	}
 
 	var self = this;
 
 	return self.variableWindow(function (a, b) {
-			return a === b;
+			return selector(a) === selector(b);
+		})
+		.selectPairs(function (windowIndex, window) {
+			return [window.getIndex().first(), window.first()];
 		});
 };
 
 /**
  * Group distinct values in the Series into a Series of windows.
+ *
+ * @param {function} selector - Selects the value used to compare for duplicates.
  */
-Series.prototype.distinct = function (obsoleteSelector) {
+Series.prototype.distinct = function (selector) {
 	
-	assert(!obsoleteSelector, "Selector parameter is obsolete and no longer required.");
+	if (selector) {
+		assert.isFunction(selector, "Expected 'selector' parameter to 'Series.distinct' to be a selector function that determines the value to compare for duplicates.")
+	}
+	else {
+		selector = function (value) {
+			return value;
+		};
+	}
 
 	var self = this;
 
@@ -27664,7 +31138,6 @@ Series.prototype.distinct = function (obsoleteSelector) {
 		.toArray();
 
 	var output = [];
-	var windowIndex = 0;
 
 	for (var i = 0; i < input.length; ++i) {
 		var underConsideration = input[i];
@@ -27673,10 +31146,8 @@ Series.prototype.distinct = function (obsoleteSelector) {
 			continue;
 		}
 
-		var curWindow = [];
-
+		var curPair = underConsideration.pair;
 		underConsideration.considered = true; // Don't really need to do this, because we never backtrack, but it feels like it makes the code 'complete'.
-		curWindow.push(underConsideration.pair);
 
 		for (var j = i+1; j < input.length; ++j) {
 			var underComparison = input[j];
@@ -27684,40 +31155,24 @@ Series.prototype.distinct = function (obsoleteSelector) {
 				continue;
 			}
 
-			if (underComparison.pair[1] === underConsideration.pair[1]) {
+			if (selector(underComparison.pair[1]) === selector(underConsideration.pair[1])) {
 				underComparison.considered = true;
-				curWindow.push(underComparison.pair);
 			}
 		}
 
-		var window = new Series({
-			values: E.from(curWindow)	
-				.select(function (pair) {
-					return pair[1];
-				})
-				.toArray(),
-			index: E.from(curWindow)
-				.select(function (pair) {
-					return pair[0];
-				})
-				.toArray()
-		});
-		
-		output.push([windowIndex, window]);
-		++windowIndex;
+		output.push(curPair);
 	}
 
-	return new Series({
-		values: E.from(output)
-			.select(function (pair) {
-				return pair[1];
-			})
-			.toArray(),
-		index: E.from(output)
-			.select(function (pair) {
-				return pair[0];
-			})
-			.toArray(),
+	return new self.Constructor({
+		iterable: {
+			getIterator: function () {
+				return new ArrayIterator(output);
+			},
+
+			getColumnNames: function () {
+				return self.iterable.getColumnNames();
+			}
+		},
 	});
 };
 
@@ -27777,19 +31232,481 @@ Series.prototype.variableWindow = function (comparer, obsoleteSelector) {
 					return pair[1];
 				})
 				.toArray(),
-			index: new Index(
-				E.from(output)
+			index: new Series({ 
+				values: E.from(output)
 					.select(function (pair) {
 						return pair[0];
 					})
 					.toArray()
-			)
+			})
 	});
 };
 
-module.exports = Series;
+/**
+ * Insert a pair at the start of a Series.
+ *
+ * @param {pair} pair - The pair to insert.
+ */
+Series.prototype.insertPair = function (pair) {
+	assert.isArray(pair, "Expected 'pair' parameter to 'Series.insertPair' to be an array.");
+	assert(pair.length === 2, "Expected 'pair' parameter to 'Series.insertPair' to be an array with two elements. The first element is the index, the second is the value.");
 
-},{"../index.js":3,"../src/iterators/count":50,"../src/iterators/empty":51,"../src/iterators/pair":53,"../src/iterators/select":55,"../src/iterators/select-many":54,"../src/iterators/take":59,"../src/iterators/take-while":58,"../src/iterators/where":61,"./dataframe":46,"./index":47,"./iterators/array":48,"./iterators/skip":57,"./iterators/skip-while":56,"./iterators/validate":60,"chai":5,"easy-table":41,"linq":43,"moment":44}],63:[function(require,module,exports){
+	//todo: make this lazy.
+
+	var self = this;
+	var pairs = [pair].concat(self.toPairs());
+	return new self.Constructor({
+		iterable: new ArrayIterable(pairs), 
+	});
+};
+
+/**
+ * Append a pair to the end of a Series.
+ *
+ * @param {pair} pair - The pair to append.
+ */
+Series.prototype.appendPair = function (pair) {
+	assert.isArray(pair, "Expected 'pair' parameter to 'Series.appendPair' to be an array.");
+	assert(pair.length === 2, "Expected 'pair' parameter to 'Series.appendPair' to be an array with two elements. The first element is the index, the second is the value.");
+
+	//todo: make this lazy.
+
+	var self = this;
+	var pairs = self.toPairs();
+	pairs.push(pair);
+	return new self.Constructor({
+		iterable: new ArrayIterable(pairs), 
+	});
+};
+
+
+/**
+ * Fill gaps in a series.
+ *
+ * @param {function} predicate - Predicate that is passed pairA and pairB, two consecutive rows, return truthy if there is a gap between the rows, or falsey if there is no gap.
+ * @param {function} generator - Generator that is passed pairA and pairB, two consecutive rows, returns an array of pairs that fills the gap between the rows.
+ */
+Series.prototype.fillGaps = function (predicate, generator) {
+	assert.isFunction(predicate, "Expected 'predicate' parameter to 'Series.fillGaps' to be a predicate function that returns a boolean.")
+	assert.isFunction(generator, "Expected 'generator' parameter to 'Series.fillGaps' to be a generator function that returns an array of generated pairs.")
+
+	var self = this;
+
+	return self.rollingWindow(2)
+		.selectManyPairs(function (windowIndex, window) {
+			var pairA = window.firstPair();
+			var pairB = window.lastPair();
+			if (!predicate(pairA, pairB)) {
+				return [pairA];
+			}
+
+			var generatedRows = generator(pairA, pairB);
+			assert.isArray(generatedRows, "Expected return from 'generator' parameter to 'Series.fillGaps' to be an array of pairs, instead got a " + typeof(generatedRows));
+
+			return [pairA].concat(generatedRows);
+		})
+		.appendPair(self.lastPair())
+		;
+};
+
+/**
+ * Group the series according to the selector.
+ *
+ * @param {function} selector - Selector that defines the value to group by.
+ */
+Series.prototype.groupBy = function (selector) {
+
+	assert.isFunction(selector, "Expected 'selector' parameter to 'Series.groupBy' to be a selector function that determines the value to group the series by.")
+	
+	var self = this;
+	var groupedPairs = E.from(self.toPairs())
+		.groupBy(function (pair) {
+			return selector(pair[1], pair[0]);
+		})
+		.select(function (group) {
+			return [
+				group.key(),
+				new Series({
+					iterable: new ArrayIterable(group.getSource()), 
+				}),
+			];
+		})
+		.toArray();
+
+	return new Series({
+		iterable: new ArrayIterable(groupedPairs),
+	});
+};
+
+/**
+ * Group sequential duplicate values into a Series of windows.
+ *
+ * @param {function} selector - Selector that defines the value to group by.
+ */
+Series.prototype.groupSequentialBy = function (selector) {
+
+	if (selector) {
+		assert.isFunction(selector, "Expected 'selector' parameter to 'Series.groupSequentialBy' to be a selector function that determines the value to group the series by.")
+	}
+	else {
+		selector = function (value) {
+			return value;
+		};
+	}
+	
+	var self = this;
+
+	return self.variableWindow(function (a, b) {
+			return selector(a) === selector(b);
+		});
+};
+
+/**
+ * Get the value at a specified index.
+ *
+ * @param {function} index - Index to for which to retreive the value.
+ */
+Series.prototype.at = function (index) {
+
+	var self = this;
+	var iterator = self.iterable.getIterator();
+
+	if (!iterator.moveNext()) {
+		return undefined;
+	}
+
+	//
+	// This is pretty expensive.
+	// A specialised index could improve this.
+	//
+
+	do {
+
+		var curPair = iterator.getCurrent();
+		if (curPair[0] === index) {
+			return curPair[1];
+		}
+
+	} while (iterator.moveNext());
+
+	return undefined;
+};
+
+/**
+ * Returns true if the Series contains the specified value.
+ *
+ * @param {function} value - The value to check for in the Series.
+ */
+Series.prototype.contains = function (value) {
+
+	var self = this;
+	return self.any(function (searchValue) {
+			return searchValue === value;
+		});
+};
+
+/**
+ * Concatenate multiple other series onto this series.
+ * 
+ * @param {array|Series*} series - Multiple arguments. Each can be either a series or an array of series. 
+ */
+Series.prototype.concat = function () {
+
+	var self = this;
+	return concatSeries(
+		[self].concat(
+			E.from(arguments)
+				.selectMany(function (argument) {
+					if (Object.isArray(argument)) {
+						return argument;
+					}
+					else {
+						return [argument];
+					}
+				})
+				.toArray()
+		)			
+	);
+};
+
+/**
+ * Correlates the elements of two Series or DataFrames based on matching keys.
+ *
+ * @param {Series|DataFrame} self - The outer Series or DataFrame to join. 
+ * @param {Series|DataFrame} inner - The inner Series or DataFrame to join.
+ * @param {function} outerKeySelector - Selector that chooses the join key from the outer sequence.
+ * @param {function} innerKeySelector - Selector that chooses the join key from the inner sequence.
+ * @param {function} resultSelector - Selector that defines how to merge outer and inner values. 
+ */
+Series.prototype.join = function (inner, outerKeySelector, innerKeySelector, resultSelector) {
+
+	assert.instanceOf(inner, Series, "Expected 'inner' parameter of 'Series.join' to be a Series or DataFrame.");
+	assert.isFunction(outerKeySelector, "Expected 'outerKeySelector' parameter of 'Series.join' to be a selector function.");
+	assert.isFunction(innerKeySelector, "Expected 'innerKeySelector' parameter of 'Series.join' to be a selector function.");
+	assert.isFunction(resultSelector, "Expected 'resultSelector' parameter of 'Series.join' to be a selector function.");
+
+	var outer = this;
+	var joined = E.from(outer.toPairs())
+		.join(
+			inner.toPairs(),
+			function (outerPair) {
+				return outerKeySelector(outerPair[1], outerPair[0]);
+			},
+			function (innerPair) {
+				return innerKeySelector(innerPair[1], innerPair[0]);
+			},
+			function (outerPair, innerPair) {
+				return resultSelector(outerPair[1], innerPair[1]);
+			}
+		)
+		.toArray();
+
+	return new DataFrame({
+		values: joined,
+	});
+};
+
+/**
+ * Performs an outer join on two Series or DataFrames. Correlates the elements based on matching keys.
+ * Includes elements that have no correlation.
+ *
+ * @param {Series|DataFrame} self - The outer Series or DataFrame to join. 
+ * @param {Series|DataFrame} inner - The inner Series or DataFrame to join.
+ * @param {function} outerKeySelector - Selector that chooses the join key from the outer sequence.
+ * @param {function} innerKeySelector - Selector that chooses the join key from the inner sequence.
+ * @param {function} outerResultSelector - Selector that defines how to extract the outer value before joining it with the inner value. 
+ * @param {function} innerResultSelector - Selector that defines how to extract the inner value before joining it with the outer value.
+ * @param {function} mergeSelector - Selector that defines how to combine left and right.
+ * 
+ * Implementation from here:
+ * 
+ * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ */
+Series.prototype.joinOuter = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
+
+	assert.instanceOf(rightSeries, Series, "Expected 'rightSeries' parameter of 'Series.joinOuter' to be a Series.");
+	assert.isFunction(outerKeySelector, "Expected 'outerKeySelector' parameter of 'Series.joinOuter' to be a selector function.");
+	assert.isFunction(innerKeySelector, "Expected 'innerKeySelector' parameter of 'Series.joinOuter' to be a selector function.");
+	assert.isFunction(resultSelector, "Expected 'resultSelector' parameter of 'Series.joinOuter' to be a selector function.");
+
+	var self = this;
+
+	var leftOuter = self.except(rightSeries, function (outer, inner) {
+			return outerKeySelector(outer) === innerKeySelector(inner);
+		})
+		.select(function (outer) { 
+			return resultSelector(outer, null);
+		})
+		;
+
+	var rightOuter = rightSeries.except(self, function (inner, outer) {
+			return outerKeySelector(outer) === innerKeySelector(inner);
+		})
+		.select(function (inner) {
+			return resultSelector(null, inner);
+		})
+		;
+
+	var inner = self.join(rightSeries, outerKeySelector, innerKeySelector, resultSelector);
+
+	return leftOuter
+		.concat(inner)
+		.concat(rightOuter)
+		.resetIndex()
+		;
+};
+
+/**
+ * Performs a left outer join on two Series or DataFrames. Correlates the elements based on matching keys.
+ * Includes left elements that have no correlation.
+ *
+ * @param {Series|DataFrame} self - The outer Series or DataFrame to join. 
+ * @param {Series|DataFrame} inner - The inner Series or DataFrame to join.
+ * @param {function} outerKeySelector - Selector that chooses the join key from the outer sequence.
+ * @param {function} innerKeySelector - Selector that chooses the join key from the inner sequence.
+ * @param {function} outerResultSelector - Selector that defines how to extract the outer value before joining it with the inner value. 
+ * @param {function} innerResultSelector - Selector that defines how to extract the inner value before joining it with the outer value.
+ * @param {function} mergeSelector - Selector that defines how to combine left and right.
+ * 
+ * Implementation from here:
+ * 
+ * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ */
+Series.prototype.joinOuterLeft = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
+
+	assert.instanceOf(rightSeries, Series, "Expected 'rightSeries' parameter of 'Series.joinOuterLeft' to be a Series.");
+	assert.isFunction(outerKeySelector, "Expected 'outerKeySelector' parameter of 'Series.joinOuterLeft' to be a selector function.");
+	assert.isFunction(innerKeySelector, "Expected 'innerKeySelector' parameter of 'Series.joinOuterLeft' to be a selector function.");
+	assert.isFunction(resultSelector, "Expected 'resultSelector' parameter of 'Series.joinOuterLeft' to be a selector function.");
+
+	var self = this;
+
+	var leftOuter = self.except(rightSeries, function (outer, inner) {
+			return outerKeySelector(outer) === innerKeySelector(inner);
+		})
+		.select(function (outer) { 
+			return resultSelector(outer, null);
+		})
+		;
+
+	var inner = self.join(rightSeries, outerKeySelector, innerKeySelector, resultSelector);
+
+	return leftOuter
+		.concat(inner)
+		.resetIndex()
+		;
+};
+
+/**
+ * Performs a right outer join on two Series or DataFrames. Correlates the elements based on matching keys.
+ * Includes right elements that have no correlation.
+ *
+ * @param {Series|DataFrame} self - The outer Series or DataFrame to join. 
+ * @param {Series|DataFrame} inner - The inner Series or DataFrame to join.
+ * @param {function} outerKeySelector - Selector that chooses the join key from the outer sequence.
+ * @param {function} innerKeySelector - Selector that chooses the join key from the inner sequence.
+ * @param {function} outerResultSelector - Selector that defines how to extract the outer value before joining it with the inner value. 
+ * @param {function} innerResultSelector - Selector that defines how to extract the inner value before joining it with the outer value.
+ * @param {function} mergeSelector - Selector that defines how to combine left and right.
+ * 
+ * Implementation from here:
+ * 
+ * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ */
+Series.prototype.joinOuterRight = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
+
+	assert.instanceOf(rightSeries, Series, "Expected 'rightSeries' parameter of 'Series.joinOuterRight' to be a Series.");
+	assert.isFunction(outerKeySelector, "Expected 'outerKeySelector' parameter of 'Series.joinOuterRight' to be a selector function.");
+	assert.isFunction(innerKeySelector, "Expected 'innerKeySelector' parameter of 'Series.joinOuterRight' to be a selector function.");
+	assert.isFunction(resultSelector, "Expected 'resultSelector' parameter of 'Series.joinOuterRight' to be a selector function.");
+
+	var self = this;
+
+	var rightOuter = rightSeries.except(self, function (inner, outer) {
+			return outerKeySelector(outer) === innerKeySelector(inner);
+		})
+		.select(function (inner) {
+			return resultSelector(null, inner);
+		})
+		;
+
+	var inner = self.join(rightSeries, outerKeySelector, innerKeySelector, resultSelector);
+
+	return inner
+		.concat(rightOuter)
+		.resetIndex()
+		;
+};
+
+/**
+ * Returns the specified default sequence if the Series or DataFrame is empty. 
+ *
+ * @param {array|Series|DataFrame} defaultSequence - Default sequence to return if the Series or DataFrame is empty.
+ */
+Series.prototype.defaultIfEmpty = function (defaultSequence) {
+
+	if (!Object.isArray(defaultSequence)) {
+		assert.instanceOf(defaultSequence, Series, "Expect 'defaultSequence' parameter to 'Series.defaultIfEmpty' to be an array, Series or DataFrame.");
+	}
+
+	var self = this;
+	if (self.none()) {
+		if (defaultSequence instanceof Series) {
+			return defaultSequence;
+		}
+		else {
+			return new self.Constructor({
+				values: defaultSequence,
+			});
+		}
+	} 
+	else {
+		return self;
+	}
+};
+
+/**
+ * Returns the unique union of values between two Series or DataFrames.
+ *
+ * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
+ * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ */
+Series.prototype.union = function (other, selector) {
+
+	assert.instanceOf(other, Series, "Expected 'other' parameter to 'Series.union' to be a Series or DataFrame.");
+
+	if (selector) {
+		assert.isFunction(selector, "Expected optional 'selector' parameter to 'Series.union' to be a selector function.");
+	}
+
+	var self = this;
+	return self.concat(other)
+		.distinct(selector)
+		;
+};
+
+/**
+ * Returns the intersection of values between two Series or DataFrames.
+ *
+ * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
+ * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ */
+Series.prototype.intersection = function (other, comparer) {
+
+	assert.instanceOf(other, Series, "Expected 'other' parameter to 'Series.intersection' to be a Series or DataFrame.");
+
+	if (comparer) {
+		assert.isFunction(comparer, "Expected optional 'comparer' parameter to 'Series.intersection' to be a comparer function.");
+	}
+	else {
+		comparer = function (left, right) {
+			return left === right;
+		};
+	}
+
+	var self = this;
+	return self
+		.where(function (left) {
+			return other
+				.where(function (right) {
+					return comparer(left, right);
+				})
+				.any();
+		})
+		;
+};
+
+/**
+ * Returns the exception of values between two Series or DataFrames.
+ *
+ * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
+ * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ */
+Series.prototype.except = function (other, comparer) {
+
+	assert.instanceOf(other, Series, "Expected 'other' parameter to 'Series.except' to be a Series or DataFrame.");
+
+	if (comparer) {
+		assert.isFunction(comparer, "Expected optional 'comparer' parameter to 'Series.except' to be a comparer function.");
+	}
+	else {
+		comparer = function (left, right) {
+			return left === right;
+		};
+	}
+
+	var self = this;
+	return self
+		.where(function (left) {
+			return other
+				.where(function (right) {
+					return comparer(left, right);
+				})
+				.none();
+		})
+		;
+};
+},{"../src/iterables/array":51,"../src/iterables/count":52,"../src/iterables/empty":53,"../src/iterables/extract":54,"../src/iterables/pairs":55,"../src/iterables/select-many":57,"../src/iterables/select-many-pairs":56,"../src/iterables/select-pairs":58,"../src/iterables/select-values":59,"../src/iterables/skip":61,"../src/iterables/skip-while":60,"../src/iterables/take":63,"../src/iterables/take-while":62,"../src/iterables/where":64,"../src/iterators/count":67,"../src/iterators/empty":68,"../src/iterators/pair":70,"../src/iterators/select":72,"../src/iterators/select-many":71,"../src/iterators/take":76,"../src/iterators/take-while":75,"../src/iterators/where":78,"./concat-series":48,"./dataframe":49,"./iterators/array":65,"./iterators/skip":74,"./iterators/skip-while":73,"./iterators/validate":77,"./zip":81,"chai":6,"easy-table":42,"extend":43,"linq":44,"moment":45}],80:[function(require,module,exports){
 'use strict';
 
 var E = require('linq');
@@ -27807,7 +31724,56 @@ module.exports = {
 	},
 
 };
-},{"linq":43}],64:[function(require,module,exports){
+},{"linq":44}],81:[function(require,module,exports){
+'use strict';
+
+var assert = require('chai').assert;
+var E = require('linq');
+var Series = require('./series.js');
+
+/*
+ * Zip together multiple series or data-frames to create a new series or data-frame.
+ * Preserves the index of the first series or dataframe.
+ *
+ * @param {array} input - Array of series to zip together.
+ * @param {function} selector - Selector function that produces a new series based on the input series.
+ */
+module.exports = function (input, selector, Constructor) {
+
+	assert.isArray(input, "Expected 'input' parameter to zipSeries/DataFrames to be an array of Series or DataFrames.");
+	assert.isFunction(selector, "Expected 'selector' parameter to zipSeries/DataFrames to be a function.");
+	assert.isFunction(Constructor, "Expected 'Constructor' parameter to zipSeries/DataFrames to be a constructor function.");
+
+	var toZip = E.from(input)
+		.select(function (sequence) {
+			return sequence.toValues();
+		})
+		.toArray();
+
+	var length = E.from(toZip)
+		.select(function (values) { 
+			return values.length; 
+		})
+		.min();
+
+	var output = [];
+
+	for (var i = 0; i < length; ++i) {
+		var curElements = E.from(toZip)
+			.select(function (values) {
+				return values[i];
+			})
+			.toArray();
+		output.push(selector(new Series({ values: curElements })));
+	}
+
+	return new Constructor({
+		index: input[0].getIndex().take(length),
+		values: output,
+	});
+};
+
+},{"./series.js":79,"chai":6,"linq":44}],82:[function(require,module,exports){
 'use strict'
 
 exports.toByteArray = toByteArray
@@ -27918,7 +31884,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],65:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -29633,7 +33599,7 @@ function isnan (val) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":64,"ieee754":66,"isarray":67}],66:[function(require,module,exports){
+},{"base64-js":82,"ieee754":84,"isarray":85}],84:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -29719,7 +33685,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],67:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {

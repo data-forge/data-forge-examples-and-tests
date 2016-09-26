@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require("../../index.js");
+var dataForge = require('../../../data-forge-js/index.js');
 var fs = require('fs');
 var glob = require('glob');
 var E = require('linq');
@@ -18,7 +18,7 @@ var loadSharePricesFile = function (filePath) {
 var loadSharePrices = function () {
 	var filePaths = glob.sync("./prices/*");
 	var loaded = E.from(filePaths).select(loadSharePricesFile).toArray();
-	return dataForge.concat(loaded);
+	return dataForge.concatDataFrames(loaded);
 };
 
 var dataFrame = loadSharePrices();

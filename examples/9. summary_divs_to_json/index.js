@@ -1,7 +1,8 @@
 'use strict';
 
 var fs = require('fs');
-var dataForge = require("../../index.js");
+var dataForge = require('../../../data-forge-js/index.js');
+var moment = require('moment');
 
 //
 // Summarise dividends by year.
@@ -9,24 +10,32 @@ var dataForge = require("../../index.js");
 var summarizeDividends = function (dataFrame) {
 
 	return dataFrame
+		.generateSeries(function (row) {
+			return {
+				Year: moment(row['Ex Date'], 'DD-MMM-YYYY').toDate().getFullYear(), // Extract year. 
+			};
+		})
 		.groupBy(function (row) {
-			return row.exDate.getYear(); // Group by year.
+			return row.Year; // Group by year.
 		})
 		.toObject(
 			// Key
 			function (dividendsByYear) {
-				return dividendsByYear.key;
+				return dividendsByYear.first().Year;
 			},
 			// Value
 			function (dividendsByYear) {
 				return dividendsByYear
 					.aggregate(0, function (prev, dividend) {
-						return prev + dividend.amount;
+						return prev + dividend.Amount;
 					});
 			}
 		);
 };
 
-var dataFrame = dataForge.fromCSV(fs.readFileSync('dividends.csv', 'utf8'));
+var dataFrame = dataForge
+	.fromCSV(fs.readFileSync('dividends.csv', 'utf8'))
+	.parseFloats("Amount")
+	;
 var summary = summarizeDividends(dataFrame);
-fs.writeFileSync('output.json', summary.toJSON());
+fs.writeFileSync('output.json', JSON.stringify(summary, null, 4));

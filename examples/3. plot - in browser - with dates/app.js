@@ -15,7 +15,7 @@ $(function() {
 					.toValues();
 				seriesData = E.from(seriesData)
 					.select(function (entry) {
-						return [entry[0].getTime(), entry[1]];
+						return [entry.Date.getTime(), entry.Sin];
 					})
 					.toArray();
 				return {
@@ -42,7 +42,7 @@ $(function() {
 
 	var dataFrame = new dataForge.DataFrame({
 			columnNames: ["Date", "Sin", "Cos"], 
-			rows: values
+			values: values
 		});
 	
 	//

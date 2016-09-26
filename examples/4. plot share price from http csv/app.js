@@ -34,7 +34,7 @@ $(function() {
 	// Helper function for plotting.
 	//
 	var plot = function (id, dataFrame) {
-		var data = E.from(dataFrame.toObjects()) // Assume first column is date, second column is value to plot.
+		var data = E.from(dataFrame.toValues()) // Assume first column is date, second column is value to plot.
 			.select(function (entry) {
 				return [
 					entry.Date.getTime(),

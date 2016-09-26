@@ -1,8 +1,8 @@
 'use strict';
 
-var fs = require('fs');
-var dataForge = require("../../index.js");
+var dataForge = require('../../../data-forge-js/index.js');
 var moment = require('moment');
+var fs = require('fs');
 var E = require('linq');
 
 //
@@ -10,11 +10,11 @@ var E = require('linq');
 //
 var summarizeDividends = function (dataFrame) {
 
-	var grouped = dataFrame
+	return dataFrame
 		.groupBy(function (row) {
 			return moment(row['Ex Date'], 'dd-mmm-YYYY').toDate().getYear(); // Group by year.
 		})
-		.select(function (dividendsByYear) {
+		.inflate(function (dividendsByYear) {
 			return dividendsByYear
 				.aggregate(function (prev, dividend) {
 					return {

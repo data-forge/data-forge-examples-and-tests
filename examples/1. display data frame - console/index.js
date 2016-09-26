@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('../../index.js');
+var dataForge = require('../../../data-forge-js/index.js');
 var E = require('linq');
 
 // 
@@ -15,7 +15,7 @@ var values = E
 
 var dataFrame = new dataForge.DataFrame({
 		columnNames: ["index", "Sin", "Cos"], 
-		rows: values 
+		values: values 
 	})
 	.setIndex("index")
 	.dropSeries("index");

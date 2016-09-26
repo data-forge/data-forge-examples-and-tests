@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require("../../index.js");
+var dataForge = require('../../../data-forge-js/index.js');
 var glob = require('glob');
 var E = require('linq');
 var fs = require('fs');

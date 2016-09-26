@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require("../../index.js");
+var dataForge = require('../../../data-forge-js/index.js');
 var fs = require('fs');
 var E = require('linq');
 
@@ -11,13 +11,13 @@ var computeSimpleMovingAverage = function (dataFrame, period) {
 
 	var movingAvg = dataFrame.getSeries('Close')
 		.rollingWindow(period)
-		.selectPairs(function (window) {
+		.selectPairs(function (windowIndex, window) {
 			return [window.lastPair()[0], window.average()];
 		});
 
 	// Create a new data frame with the new column, doesn't modify original data frame.
 	//console.log(movingAvg.getIndex().toValues());
-	return dataFrame.setSeries('SMA', movingAvg);
+	return dataFrame.withSeries('SMA', movingAvg);
 };
 
 var dataFrame = dataForge
