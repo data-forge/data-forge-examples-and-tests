@@ -6,14 +6,22 @@ $(function() {
 	// Helper function for plotting.
 	//
 	var plot = function (id, indexColumnName, dataFrame) {
-		var index = dataFrame.getSeries(indexColumnName).toValues();
-		var remainingColumns = dataFrame.dropSeries(indexColumnName).getColumns();
+		var index = dataFrame
+			.getSeries(indexColumnName)
+			.toArray()
+			;
+			
+		var remainingColumns = dataFrame
+			.dropSeries(indexColumnName)
+			.getColumns()
+			.toArray()
+			;
 
 		var flotSeries = E.from(remainingColumns)
 			.select(function (column) {
 				var name = column.name;
 				var data = E.from(index)
-					.zip(column.series.toValues(), function (index, value) {
+					.zip(column.series.toArray(), function (index, value) {
 						return [index, value];
 					})
 					.toArray();

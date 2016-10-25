@@ -7,12 +7,16 @@ $(function() {
 	//
 	var plot = function (id, indexColumnName, dataFrame) {
 
-		var remainingColumnNames = dataFrame.dropSeries(indexColumnName).getColumnNames();
+		var remainingColumnNames = dataFrame
+			.dropSeries(indexColumnName)
+			.getColumnNames()
+			;
+
 		var flotSeries = E.from(remainingColumnNames)
 			.select(function (columnName) {
 				var seriesData = dataFrame
 					.subset([indexColumnName, columnName])
-					.toValues();
+					.toArray();
 				seriesData = E.from(seriesData)
 					.select(function (entry) {
 						return [entry.Date.getTime(), entry.Sin];

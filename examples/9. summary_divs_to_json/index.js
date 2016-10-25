@@ -10,10 +10,12 @@ var moment = require('moment');
 var summarizeDividends = function (dataFrame) {
 
 	return dataFrame
-		.generateSeries(function (row) {
-			return {
-				Year: moment(row['Ex Date'], 'DD-MMM-YYYY').toDate().getFullYear(), // Extract year. 
-			};
+		.withSeries({
+			Year: function (df) {
+				return df.deflate(function (row) {
+						return moment(row['Ex Date'], 'DD-MMM-YYYY').toDate().getFullYear(); // Extract year. 
+					});				
+			},
 		})
 		.groupBy(function (row) {
 			return row.Year; // Group by year.
@@ -37,5 +39,6 @@ var dataFrame = dataForge
 	.fromCSV(fs.readFileSync('dividends.csv', 'utf8'))
 	.parseFloats("Amount")
 	;
+
 var summary = summarizeDividends(dataFrame);
 fs.writeFileSync('output.json', JSON.stringify(summary, null, 4));

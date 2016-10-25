@@ -20,7 +20,7 @@ var loadSharePricesFile = function (filePath) {
 var loadSharePrices = function () {
 	var filePaths = glob.sync("./prices/*");
 	var loaded = E.from(filePaths).select(loadSharePricesFile).toArray();
-	return dataForge.concat(loaded);
+	return dataForge.concatDataFrames(loaded);
 };
 
 var prices = loadSharePrices();
