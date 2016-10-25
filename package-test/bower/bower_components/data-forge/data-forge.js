@@ -37,25 +37,27 @@ var registeredPlugins = {};
  * 		bower install --save data-forge
  * 
  * 		<script language="javascript" type="text/javascript" src="bower_components/data-forge/data-forge.js"></script>
+ *
+ * @namespace dataForge
  */
 var dataForge = {
 	
-	/**
-	 * Constructor for DataFrame.
-	 *
-	 * @param {object|array} config|values - Specifies content and configuration for the DataFrame.
-	 */
+	//
+	// Constructor for DataFrame.
+	//
 	DataFrame: DataFrame,
 
-	/**
-	 * Constructor for Series.
-	 *
-	 * @param {object|array} config|values - Specifies content and configuration for the Series.
-	 */
+	//
+	// Constructor for Series.
+	//
 	Series: Series,
 
 	/**
 	 * Install a plugin in the dataForge namespace.
+	 * 
+	 * @param {plugin-object} plugin - The plugin to add to data-forge.
+	 * 
+	 * @returns {dataForge} Returns the dataForge API object so that calls to 'use' can be chained.
 	 */
 	use: function (plugin) {
 
@@ -69,6 +71,7 @@ var dataForge = {
 
 		var self = this;
 		plugin(self);
+		return self;
 	},
 
 
@@ -77,6 +80,8 @@ var dataForge = {
 	 *
 	 * @param {string} jsonTextString - The JSON text to deserialize.
 	 * @param {config} [config] - Optional configuration option to pass to the DataFrame.
+	 * 
+	 * @returns {DataFrame} Returns a dataframe that has been deserialized from the JSON data.
 	 */
 	fromJSON: function (jsonTextString, config) {
 		
@@ -94,14 +99,27 @@ var dataForge = {
 		return new DataFrame(dataFrameConfig);
 	},
 
-	//
-	// Deserialize a DataFrame from a CSV text string.
-	//
+	/**
+	 * Deserialize a DataFrame from a CSV text string.
+	 *
+	 * @param {string} csvTextString - The CSV text to deserialize.
+	 * @param {config} [config] - Optional configuration option to pass to the DataFrame.
+	 * 
+	 * @returns {DataFrame} Returns a dataframe that has been deserialized from the CSV data.
+	 */
 	fromCSV: function (csvTextString, config) {
 		assert.isString(csvTextString, "Expected 'csvTextString' parameter to 'dataForge.fromCSV' to be a string containing data encoded in the CSV format.");
 
 		if (config) {
 			assert.isObject(config, "Expected 'config' parameter to 'dataForge.fromJSON' to be an object with configuration to pass to the DataFrame.");
+
+			if (config.columnNames) {
+				assert.isArray(config.columnNames, "Expect 'columnNames' field of 'config' parameter to DataForge.fromCSV to be an array of strings that specify column names.")
+
+				config.columnNames.forEach(function (columnName) {
+					assert.isString(columnName, "Expect 'columnNames' field of 'config' parameter to DataForge.fromCSV to be an array of strings that specify column names.")
+				});
+			}			
 		}
 
 		var csvConfig = extend({}, config);
@@ -137,27 +155,35 @@ var dataForge = {
 		if (rows.length === 0) {
 			return new dataForge.DataFrame({ columnNames: [], values: [] });
 		}
-				
-		var columnNames = E.from(E.from(rows).first())
-				.select(function (columnName) {
-					return columnName.trim();
-				})
-				.toArray();
 
-		var remaining = E.from(rows)
-			.skip(1)
+		var columnNames;
+		rows = E.from(rows)
 			.select(function (row) {
 				return E.from(row)
 					.select(function (cell) {
-						return cell.trim();
+						return cell.trim(); // Trim each cell.
 					})
 					.toArray()
 			})
 			.toArray();
 
+		if (config && config.columnNames) {
+			columnNames = config.columnNames;
+		}
+		else {
+			columnNames = E.from(E.from(rows).first())
+				.select(function (columnName) {
+					return columnName.trim();
+				})
+				.toArray();
+			rows = E.from(rows)
+				.skip(1) // Skip header.
+				.toArray();
+		}
+
 		var baseConfig = {
 			columnNames: columnNames, 
-			values: remaining,
+			values: rows,
 		};
 		var dataFrameConfig = extend({}, config || {}, baseConfig);
 		return new dataForge.DataFrame(dataFrameConfig);
@@ -166,14 +192,18 @@ var dataForge = {
 	/**
 	 * Concatenate multiple dataframes into a single dataframe.
 	 *
-	 * @param {array} dataFrames - Array of dataframes to concatenate. 
+	 * @param {array} dataFrames - Array of dataframes to concatenate.
+	 * 
+	 * @returns {DataFrame} Returns the single concatendated dataframe. 
 	 */
 	concatDataFrames: require('./src/concat-dataframes'),
 
 	/**
 	 * Concatenate multiple series into a single series.
 	 * 
-	 * @param {array} series - Array of series to concatenate. 
+	 * @param {array} series - Array of series to concatenate.
+	 *
+	 * @returns {Series} - Returns the single concatendated series.  
 	 */
 	concatSeries: require('./src/concat-series'),
 
@@ -182,6 +212,8 @@ var dataForge = {
 	 *
 	 * @param {int} start - The value of the first number in the range.
 	 * @param {int} count - The number of sequential values in the range.
+	 * 
+	 * @returns {Series} Returns a series with a sequence of generated values. The series contains 'count' values beginning at 'start'. 
 	 */
 	range: function (start, count) {
 
@@ -214,6 +246,8 @@ var dataForge = {
 	 * @param {int} numRows - The number of rows in the data-frame.
 	 * @param {number} start - The starting value.
 	 * @param {number} increment - The value to increment by for each new value.
+	 * 
+	 * @returns {DataFrame} Returns a dataframe that contains a matrix of generated values.
 	 */
 	matrix: function (numColumns, numRows, start, increment) {
 		return new DataFrame({
@@ -256,6 +290,8 @@ var dataForge = {
 	 *
 	 * @param {array} series - Array of series to zip together.
 	 * @param {function} selector - Selector function that produces a new series based on the input series.
+	 * 
+	 * @returns {Series} Returns a single series that is the combination of multiple input series that have been 'zipped' together by the 'selector' function.
 	 */
 	zipSeries: function (series, selector) {
 		return zip(series, selector, Series);
@@ -266,6 +302,8 @@ var dataForge = {
 	 *
 	 * @param {array} dataFrames - Array of data-frames to zip together.
 	 * @param {function} selector - Selector function that produces a new data-frame based on the input data-frames.
+	 * 
+	 * @returns {DataFrame} Returns a single dataframe that is the combination of multiple input dataframes that have been 'zipped' together by the 'selector' function.
 	 */
 	zipDataFrames: function (dataFrames, selector) {
 		return zip(dataFrames, selector, DataFrame);
@@ -23045,7 +23083,7 @@ module.exports = function (dataFrames, options) {
 				getIterator: function () {
 					var iterators = E.from(dataFrames)
 						.select(function (dataFrame) {
-							return dataFrame.remapColumns(concatenatedColumnsNames);
+							return dataFrame.reorderSeries(concatenatedColumnsNames);
 						})
 						.select(function (dataFrame) {
 							return dataFrame.getIterator();
@@ -23237,9 +23275,13 @@ var determineColumnNamesFromPairsIterable = function (iterable, considerAllRows)
 	}
 };
 
-//
-// Constuctor.
-//
+/**
+ * Constructor for DataFrame.
+ * @constructor
+ * @extends dataForge.Series
+ * @memberof dataForge
+ * @param {object|array} config|values - Specifies content and configuration for the DataFrame.
+ */
 var DataFrame = function (config) {
 
 	var self = this;
@@ -23347,7 +23389,7 @@ var DataFrame = function (config) {
 								.select(function (columnName) {
 									var column = columns[columnName];
 									if (column instanceof Series) {
-										column = column.toValues();
+										column = column.toArray();
 									}
 									return new ArrayIterator(column);
 								})
@@ -23392,6 +23434,8 @@ var ArrayIterable = require('./iterables/array');
 
 /**
  * Get the names of the columns in the data frame.
+ * 
+ * @returns {array} Returns an array of the column names in the dataframe.  
  */
 DataFrame.prototype.getColumnNames = function () {
 	var self = this;
@@ -23403,7 +23447,7 @@ DataFrame.prototype.getColumnNames = function () {
  *
  * @param {string} columnName - The name of the column to retrieve the column index for.
  *
- * @returns {Number} Returns the index of the named column or -1 if the requested column was not found.
+ * @returns {int} Returns the index of the named column or -1 if the requested column was not found.
  */
 DataFrame.prototype.getColumnIndex = function (columnName) {
 	assert.isString(columnName, "Expected 'columnName' parameter to getColumnIndex to be a non-empty string.");
@@ -23489,27 +23533,74 @@ DataFrame.prototype.expectSeries = function (columnName) {
 	return self;
 };
 
+/**
+ * Add a series if it doesn't already exist.
+ * 
+ * @param {string|object} columnNameOrSpec - The name of the series to add or a column spec that defines the new column.
+ * @param {function} seriesOrFn - The series to add or a function that returns the series.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with the specified series added, if the series didn't already exist. Otherwise if the requested series already exists the same dataframe is returned.  
+ */
+DataFrame.prototype.ensureSeries = function (columnNameOrSpec, seriesOrFn) {
+
+	if (!Object.isObject(columnNameOrSpec)) {
+		assert.isString(columnNameOrSpec, "Expected 'columnNameOrSpec' parameter to 'DataFrame.ensureSeries' function to be a string that specifies the column to set or replace.");
+
+		if (!Object.isFunction(seriesOrFn)) {
+			assert.isObject(seriesOrFn, "Expected 'seriesOrFn' parameter to 'DataFrame.ensureSeries' to be a Series object or a function that produces a Series object.");
+		}
+	}
+	else {
+		assert.isUndefined(seriesOrFn, "Expected 'seriesOrFn' parameter to 'DataFrame.ensureSeries' to not be unset when 'columnNameOrSpec is an object.");
+	}
+
+	var self = this;
+
+	if (Object.isObject(columnNameOrSpec)) {
+		return E.from(Object.keys(columnNameOrSpec))
+			.aggregate(self, function (dataFrame, columnName) {
+				return dataFrame.ensureSeries(columnName, columnNameOrSpec[columnName]);
+			});
+	}
+
+	var columnName = columnNameOrSpec;
+
+	var self = this;
+	if (self.hasSeries(columnName)) {
+		return self;
+	}
+	else {
+		return self.withSeries(columnName, seriesOrFn);
+	}
+};
+
 /** 
  * Retreive a collection of all columns.
+ * 
+ * @returns {array} Returns an array of the columns in the dataframe.  
  */
 DataFrame.prototype.getColumns = function () {
 
 	var self = this;
 
-	return E.from(self.getColumnNames())
-		.select(function (columnName) {
-			return {
-				name: columnName,
-				series: self.getSeries(columnName),
-			};
-		})
-		.toArray();
+	return new Series({
+		values: E.from(self.getColumnNames())
+			.select(function (columnName) {
+				return {
+					name: columnName,
+					series: self.getSeries(columnName),
+				};
+			})
+			.toArray() 
+	});
 };
 
 /**
  * Create a new data-frame from a subset of columns.
  *
  * @param {array} columnNames - Array of column names to include in the new data-frame.
+ * 
+ * @returns {DataFrame} Returns a dataframe with a subset of columns from the input dataframe.
  */
 DataFrame.prototype.subset = function (columnNames) {
 
@@ -23550,6 +23641,8 @@ DataFrame.prototype.subset = function (columnNames) {
  * Create a new data frame with the requested column or columns dropped.
  *
  * @param {string|array} columnOrColumns - Specifies the column name (a string) or columns (array of column names) to drop.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a particular name column or columns removed.
  */
 DataFrame.prototype.dropSeries = function (columnOrColumns) {
 
@@ -23596,6 +23689,8 @@ DataFrame.prototype.dropSeries = function (columnOrColumns) {
  * Create a new data frame with only the requested column or columns dropped, other columns are dropped.
  *
  * @param {string|array} columnOrColumns - Specifies the column name (a string) or columns (array of column names) to keep.
+ * 
+ * @returns {DataFrame} Returns a new dataframe only preserving a particular named column or columns.
  */
 DataFrame.prototype.keepSeries = function (columnOrColumns) {
 
@@ -23637,19 +23732,49 @@ DataFrame.prototype.keepSeries = function (columnOrColumns) {
 /**
  * Create a new data frame with an additional column specified by the passed-in series.
  *
- * @param {string} columnName - The name of the column to add or replace.
- * @param {Series} series - Series to add to the data-frame.
+ * @param {string|object} columnNameOrSpec - The name of the column to add or replace.
+ * @param {Series|function} [seriesOrFn] - When columnNameOrSpec is a string that identifies the column to add, this specifies the Series to add to the data-frame or a function that produces a series (given a dataframe).
+ *
+ * @returns {DataFrame} Returns a new dataframe replacing or adding a particular named column.
  */
-DataFrame.prototype.withSeries = function (columnName, series) {
+DataFrame.prototype.withSeries = function (columnNameOrSpec, seriesOrFn) {
 
-	assert.isString(columnName, "Expected 'columnName' parameter to 'DataFrame.withSeries' function to be a string that specifies the column to set or replace.");
-	assert.isObject(series, "Expected 'series' parameter to 'DataFrame.withSeries' to be a Series object.");
+	if (!Object.isObject(columnNameOrSpec)) {
+		assert.isString(columnNameOrSpec, "Expected 'columnNameOrSpec' parameter to 'DataFrame.withSeries' function to be a string that specifies the column to set or replace.");
+
+		if (!Object.isFunction(seriesOrFn)) {
+			assert.isObject(seriesOrFn, "Expected 'seriesOrFn' parameter to 'DataFrame.withSeries' to be a Series object or a function that produces a Series object.");
+		}
+	}
+	else {
+		assert.isUndefined(seriesOrFn, "Expected 'seriesOrFn' parameter to 'DataFrame.withSeries' to not be unset when 'columnNameOrSpec is an object.");
+	}
 
 	var self = this;
+
+	if (Object.isObject(columnNameOrSpec)) {
+		return E.from(Object.keys(columnNameOrSpec))
+			.aggregate(self, function (dataFrame, columnName) {
+				return dataFrame.withSeries(columnName, columnNameOrSpec[columnName]);
+			});
+	}
+
+	var columnName = columnNameOrSpec;
+
+	if (self.none()) {
+		// Empty data frame.
+		var series = Object.isFunction(seriesOrFn) ? seriesOrFn(self) : seriesOrFn; 
+		return series.inflate(function (value) {
+				var row = {};
+				row[columnName] = value;
+				return row;
+			});
+	}
 
 	return new DataFrame({
 		iterable: {
 			getIterator: function () {
+				var series = Object.isFunction(seriesOrFn) ? seriesOrFn(self) : seriesOrFn;
 				var seriesValueMap = E.from(series.toPairs())
 					.toObject(
 						function (pair) {
@@ -23685,6 +23810,8 @@ DataFrame.prototype.withSeries = function (columnName, series) {
  * Set a named column as the index of the data-frame.
  *
  * @param {string} columnName - Name or index of the column to set as the index.
+ *
+ * @returns {DataFrame} Returns a new dataframe with the values of a particular named column as the index.  
  */
 DataFrame.prototype.setIndex = function (columnName) {
 
@@ -23694,6 +23821,8 @@ DataFrame.prototype.setIndex = function (columnName) {
 
 /** 
  * Format the data frame for display as a string.
+ * 
+ * @returns {string} Returns a string representation of the dataframe for logging.  
  */
 DataFrame.prototype.toString = function () {
 
@@ -23729,6 +23858,8 @@ DataFrame.prototype.toString = function () {
  * Parse a column with string values to a column with int values.
  *
  * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a particular named column parsed as ints.  
  */
 DataFrame.prototype.parseInts = function (columnNameOrNames) {
 
@@ -23748,6 +23879,8 @@ DataFrame.prototype.parseInts = function (columnNameOrNames) {
  * Parse a column with string values to a column with float values.
  *
  * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a particular named column parsed as floats.  
  */
 DataFrame.prototype.parseFloats = function (columnNameOrNames) {
 
@@ -23768,6 +23901,8 @@ DataFrame.prototype.parseFloats = function (columnNameOrNames) {
  *
  * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to parse.
  * @param {string} [formatString] - Optional formatting string for dates.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a particular named column parsed as dates.  
  */
 DataFrame.prototype.parseDates = function (columnNameOrNames, formatString) {
 
@@ -23792,6 +23927,8 @@ DataFrame.prototype.parseDates = function (columnNameOrNames, formatString) {
  *
  * @param {string|array} columnNameOrNames - Specifies the column name or array of column names to convert to strings.
  * @param {string} [formatString] - Optional formatting string for dates.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a particular named column convert to strings.  
  */
 DataFrame.prototype.toStrings = function (columnNameOrNames, formatString) {
 
@@ -23812,13 +23949,15 @@ DataFrame.prototype.toStrings = function (columnNameOrNames, formatString) {
 };
 
 /**
- * Detect actual types and their frequencies contained within columns in the data frame.
- */
+  * Detect the types of the values in the sequence.
+  *
+  * @returns {DataFrame} Returns a dataframe that describes the data types contained in the input series or dataframe.
+  */
 DataFrame.prototype.detectTypes = function () {
 
 	var self = this;
 
-	var dataFrames = E.from(self.getColumns())
+	var dataFrames = self.getColumns()
 		.select(function (column) {
 			var series = column.series;
 			var numValues = series.count();
@@ -23839,15 +23978,18 @@ DataFrame.prototype.detectTypes = function () {
 };
 
 /**
- * Detect values and their frequencies contained within columns in the data frame.
- */
+  * Detect values and their frequencies contained within columns in the data frame.
+  * Detect the frequency of values in the sequence.
+  *
+  * @returns {DataFrame} Returns a dataframe that describes the values contained in the input sequence.
+  */
 DataFrame.prototype.detectValues = function () {
 
 	var self = this;
 
-	var dataFrames = E.from(self.getColumns())
+	var dataFrames = self.getColumns()
 		.select(function (column) {
-			var numValues = column.series.toValues().length;
+			var numValues = column.series.toArray().length;
 			//todo: broad-cast column
 			var newSeries = new Series({
 				values: E.range(0, numValues)
@@ -23861,10 +24003,13 @@ DataFrame.prototype.detectValues = function () {
 		.toArray();
 	return concatDataFrames(dataFrames).resetIndex();
 };
+
 /**
  * Produces a new data frame with all string values truncated to the requested maximum length.
  *
  * @param {int} maxLength - The maximum length of the string values after truncation.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with all strings truncated to the specified maximum length.
  */
 DataFrame.prototype.truncateStrings = function (maxLength) {
 	assert.isNumber(maxLength, "Expected 'maxLength' parameter to 'truncateStrings' to be an integer.");
@@ -23896,14 +24041,16 @@ DataFrame.prototype.truncateStrings = function (maxLength) {
  * Create a new data frame with columns reordered.
  * New column names create new columns (with undefined values), omitting existing column names causes those columns to be dropped.
  * 
- * @param {array} columnNames - The new order for columns. 
+ * @param {array} columnNames - The new order for columns.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with columns remapped according to the specified column layout.   
  */
-DataFrame.prototype.remapColumns = function (columnNames) {
+DataFrame.prototype.reorderSeries = function (columnNames) {
 
-	assert.isArray(columnNames, "Expected parameter 'columnNames' to remapColumns to be an array with column names.");
+	assert.isArray(columnNames, "Expected parameter 'columnNames' to DataFrame.reorderSeries to be an array with column names.");
 
 	columnNames.forEach(function (columnName) {
-		assert.isString(columnName, "Expected parameter 'columnNames' to remapColumns to be an array with column names.");
+		assert.isString(columnName, "Expected parameter 'columnNames' to DataFrame.reorderSeries to be an array with column names.");
 	});
 
 	var self = this;
@@ -23937,6 +24084,8 @@ DataFrame.prototype.remapColumns = function (columnNames) {
  * Create a new data-frame with renamed series.
  *
  * @param {array|object} newColumnNames|columnsMap - Array of strings, with an element for each existing column that specifies the new name of that column. Or, a hash that maps old column name to new column name.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with columns renamed.   
  */
 DataFrame.prototype.renameSeries = function (newColumnNames) {
 
@@ -23961,7 +24110,7 @@ DataFrame.prototype.renameSeries = function (newColumnNames) {
 		var existingColumns = self.iterable.getColumnNames();
 		var numExistingColumns = existingColumns.length;
 
-		assert.isArray(newColumnNames, "Expected parameter 'newColumnNames' to renameColumns to be an array with column names.");
+		assert.isArray(newColumnNames, "Expected parameter 'newColumnNames' to renameSeries to be an array with column names.");
 		assert(newColumnNames.length === numExistingColumns, "Expected 'newColumnNames' array to have an element for each existing column. There are " + numExistingColumns + "existing columns.");
 
 		return new DataFrame({
@@ -24000,42 +24149,19 @@ DataFrame.prototype.renameSeries = function (newColumnNames) {
 };
 
 /**
- * Bake the data frame to an array of rows.
- */
-DataFrame.prototype.toRows = function () {
-
-	var self = this;
-
-	var iterator = self.iterable.getIterator();
-	validateIterator(iterator);
-
-	var values = [];
-	var columnNames = self.iterable.getColumnNames();
-
-	while (iterator.moveNext()) {
-		var curRow = iterator.getCurrent()[1];  // Extract value.
-
-		var asArray = [];
-		for (var columnIndex = 0; columnIndex < columnNames.length; ++columnIndex) {
-			asArray.push(curRow[columnNames[columnIndex]]);
-		}
-
-		values.push(asArray);
-	}
-
-	return values;
-};
-
-/**
  * Serialize the data frame to JSON.
+ * 
+ *  @returns {string} Returns a JSON format string representing the dataframe.   
  */
 DataFrame.prototype.toJSON = function () {
 	var self = this;
-	return JSON.stringify(self.toValues(), null, 4);
+	return JSON.stringify(self.toArray(), null, 4);
 };
 
 /**
  * Serialize the data frame to CSV.
+ * 
+ *  @returns {string} Returns a CSV format string representing the dataframe.   
  */
 DataFrame.prototype.toCSV = function () {
 
@@ -24062,73 +24188,12 @@ DataFrame.prototype.toCSV = function () {
 	*/
 };
 
-/**
- * Transform one or more columns. This is equivalent to extracting a column, calling 'select' on it,
- * then plugging it back in as the same column.
- *
- * @param {object} columnSelectors - Object with field names for each column to be transformed. Each field you be a selector that transforms that column.
- * 
- */
-DataFrame.prototype.transformSeries = function (columnSelectors) {
-
-	assert.isObject(columnSelectors, "Expected 'columnSelectors' parameter of 'transformSeries' function to be an object. Field names should specify columns to transform. Field values should be selector functions that specify the transformation for each column.");
-
-	var self = this;
-	return E.from(Object.keys(columnSelectors))
-		.aggregate(self, function (prevDataFrame, columnName) {
-			if (prevDataFrame.hasSeries(columnName)) {
-				return prevDataFrame.withSeries(
-					columnName,
-					prevDataFrame.getSeries(columnName)
-						.select(columnSelectors[columnName])
-				);			
-			}
-			else {
-				return self;
-			}	
-		});
-};
-
-/** 
- * Generate new columns based on existing rows.
- *
- * @param {function|object} generator - Generator function that transforms each row to a new set of columns.
- */
-DataFrame.prototype.generateSeries = function (generator) {
-
-	var self = this;
-
-	//todo: make this lazy.
-	//todo: this should merge on index.
-	//todo: need to be able to override columns on 1 data frame with columns from another.
-
-	if (!Object.isObject(generator)) {
-		assert.isFunction(generator, "Expected 'generator' parameter to 'DataFrame.generateSeries' function to be a function or an object.");
-
-		var newColumns = self.select(generator)
-			.bake()
-			;
-
-		return E.from(newColumns.getColumnNames())
-			.aggregate(self, function (prevDataFrame, newColumnName) {
-				return prevDataFrame.withSeries(newColumnName, newColumns.getSeries(newColumnName).bake()).bake();
-			})
-			;
-	}
-	else {
-		var newColumnNames = Object.keys(generator);
-		return E.from(newColumnNames)
-			.aggregate(self, function (prevDataFrame, newColumnName) {
-				return prevDataFrame.withSeries(newColumnName, prevDataFrame.deflate(generator[newColumnName]).bake()).bake();
-			})
-			;
-	}
-};
-
 /** 
  * Deflate a data-frame to a series.
  *
  * @param {function} selector - Selector function that transforms each row to a new sequence of values.
+ *
+ * @returns {Series} Returns a series that was created from the input dataframe.
  */
 DataFrame.prototype.deflate = function (selector) {
 
@@ -24155,16 +24220,24 @@ DataFrame.prototype.deflate = function (selector) {
 };
 
 /** 
- * Inflate a named column in the data-frame to 1 or more new columns.
+ * Inflate a named series in the data-frame to 1 or more new series.
  *
- * @param {string|int} columnNameOrIndex - Name or index of the column to retreive.
- * @param {function} [selector] - Selector function that transforms each value in the column to new columns.
+ * @param {string} columnName - Name or index of the column to retreive.
+ * @param {function} [selector] - Optional selector function that transforms each value in the column to new columns. If not specified it is expected that each value in the column is an object whose fields define the new column names.
+ * 
+ * @returns {DataFrame} Returns a new dataframe with a column inflated to 1 or more new columns.
  */
-DataFrame.prototype.inflateColumn = function (columnNameOrIndex, selector) {
+DataFrame.prototype.inflateSeries = function (columnName, selector) {
+
+	assert.isString(columnName, "Expected 'columnName' parameter to DataFrame.inflateSeries to be a string that is the name of the column to inflate.");
+
+	if (selector) {
+		assert.isFunction(selector, "Expected optional 'selector' parameter to DataFrame.inflateSeries to be a selector function, if it is specified.");
+	}
 
 	var self = this;
 	return self.zip(
-		self.getSeries(columnNameOrIndex).inflate(selector),
+		self.getSeries(columnName).inflate(selector),
 		function (row1, row2) {
 			return extend({}, row1, row2); //todo: this be should zip's default operation.
 		}
@@ -24176,6 +24249,8 @@ DataFrame.prototype.inflateColumn = function (columnNameOrIndex, selector) {
  *
  * @param {object} [seed] - The seed value for producing the aggregation.
  * @param {function} selector - Function that takes the seed and then each row in the data-frame and produces the aggregate value.
+ *
+ * @returns {DataFrame} Returns a new dataframe with a column inflated to 1 or more new columns.
  */
 DataFrame.prototype.aggregate = function (seedOrSelector, selector) {
 
@@ -24191,7 +24266,7 @@ DataFrame.prototype.aggregate = function (seedOrSelector, selector) {
 		var it = self.iterable.getIterator();
 		while (it.moveNext()) {
 			var curValue = it.getCurrent()[1];
-			working = selector(working, curValue); //todo: should pass index in here as well.
+			working = selector(working, curValue);
 		}
 
 		return working;		
@@ -24220,6 +24295,8 @@ DataFrame.prototype.aggregate = function (seedOrSelector, selector) {
  * Bring the name column to the front, making it the first column in the data-frame.
  *
  * @param {string|array} columnOrColumns - Specifies the column or columns to bring to the front.
+ *
+ * @returns {DataFrame} Returns a new dataframe with 1 or more columns bought to the front of the column ordering.
  */
 DataFrame.prototype.bringToFront = function (columnOrColumns) {
 
@@ -24249,13 +24326,15 @@ DataFrame.prototype.bringToFront = function (columnOrColumns) {
 		.toArray();
 
 	var reorderedColumnNames = columnsToMove.concat(remainingColumnNames);
-	return self.remapColumns(reorderedColumnNames);
+	return self.reorderSeries(reorderedColumnNames);
 };
 
 /**
  * Bring the name column to the back, making it the last column in the data-frame.
  *
  * @param {string|array} columnOrColumns - Specifies the column or columns to bring to the back.
+ *
+ * @returns {DataFrame} Returns a new dataframe with 1 or more columns bought to the back of the column ordering.
  */
 DataFrame.prototype.bringToBack = function (columnOrColumns) {
 
@@ -24285,7 +24364,7 @@ DataFrame.prototype.bringToBack = function (columnOrColumns) {
 		.toArray();
 
 	var reorderedColumnNames = remainingColumnNames.concat(columnsToMove);
-	return self.remapColumns(reorderedColumnNames);
+	return self.reorderSeries(reorderedColumnNames);
 };
 
 /**
@@ -24293,6 +24372,8 @@ DataFrame.prototype.bringToBack = function (columnOrColumns) {
  *
  * @param {string} column - Column name whose values make the new DataFrame's columns.
  * @param {string} value - Column name whose values populate the new DataFrame's values.
+ *
+ * @returns {DataFrame} Returns a new dataframe that has been pivoted based on a particular column's values. 
  */
 DataFrame.prototype.pivot = function (column, value) {
 	var self = this;
@@ -24308,7 +24389,7 @@ DataFrame.prototype.pivot = function (column, value) {
 		throw new Error("Expected to find a column with name '" + value + "'.");
 	}
 
-	var newColumnNames = self.getSeries(column).distinct().toValues();
+	var newColumnNames = self.getSeries(column).distinct().toArray();
 
 	var newSeries = E.from(newColumnNames) // Create a series for each column
 		.select(function (columnName) {
@@ -24332,47 +24413,18 @@ DataFrame.prototype.pivot = function (column, value) {
 					return column[0];
 				},
 				function (column) {
-					return column[1].toValues();
+					return column[1].toArray();
 				}
 			),
 	});
 };
 
 /**
- * Merge this DataFrame with another.
- *
- * @param {DataFrame} otherDataFrame - The other DataFrame to merge in.
- * @param {string} [columnName] - Optional column name used to join the DataFrames. Omit to merge on index.
- */
-DataFrame.prototype.merge = function (otherDataFrame, columnName) {
-	assert.instanceOf(otherDataFrame, DataFrame, "Expected 'otherDataFrame' parameter of DataFrame.merge to be a DataFrame.");
-	if (columnName) {
-		assert.isString(columnName, "Expected optional 'columnName' parameter of DataFrame.merge to be a string that specifies the column to join the DataFrame on.");
-	}
-
-	var self = this;
-	return mergeDataFrames(self, otherDataFrame, columnName);
-};
-
-/**
- * Returns true if the DataFrame contains the specified row.
- *
- * @param {function} row - The row to check for in the DataFrame.
- */
-DataFrame.prototype.contains = function (row) {
-
-	var self = this;
-	var json = JSON.stringify(row); //todo: This feels somewhat dodgey.
-
-	return self.any(function (searchRow) {
-			return JSON.stringify(searchRow) === json;
-		});
-};
-
-/**
  * Concatenate multiple other dataframes onto this dataframe.
  * 
- * @param {array|DataFrame*} dataFrames - Multiple arguments. Each can be either a dataframe or an array of dataframe. 
+ * @param {...array|DataFrame} dataFrames - Multiple arguments. Each can be either a dataframe or an array of dataframe.
+ *  
+ * @returns {DataFrame} Returns a single dataframe concatenated from multiple input dataframes. 
  */
 DataFrame.prototype.concat = function () {
 
@@ -24394,29 +24446,32 @@ DataFrame.prototype.concat = function () {
 };
 
 /**
- * Retreive each row of the dataframe as an array (no column names included)
+ * Bake the data frame to an array of rows.
+ * 
+ *  @returns {array} Returns an array of rows. Each row is an array of values in column order.   
  */
 DataFrame.prototype.toRows = function () {
 
 	var self = this;
-	var iterator = self.getIterator();
+
+	var iterator = self.iterable.getIterator();
 	validateIterator(iterator);
 
-	var rows = [];
-	var columnNames = self.getColumnNames();
+	var values = [];
+	var columnNames = self.iterable.getColumnNames();
 
 	while (iterator.moveNext()) {
-		var pair = iterator.getCurrent();
-		var value = pair[1];
-		var row = E.from(columnNames)
-			.select(function (columnName) {
-				return value[columnName];
-			})
-			.toArray();
-		rows.push(row);
+		var curRow = iterator.getCurrent()[1];  // Extract value.
+
+		var asArray = [];
+		for (var columnIndex = 0; columnIndex < columnNames.length; ++columnIndex) {
+			asArray.push(curRow[columnNames[columnIndex]]);
+		}
+
+		values.push(asArray);
 	}
 
-	return rows;
+	return values;
 };
 
 },{"../src/iterators/select":70,"./concat-dataframes":45,"./inherit":48,"./iterables/array":49,"./iterables/select-values":57,"./iterators/array":63,"./iterators/multi":67,"./iterators/validate":75,"./series":77,"./utils":78,"babyparse":3,"chai":4,"easy-table":40,"extend":41,"linq":42}],48:[function(require,module,exports){
@@ -24646,7 +24701,7 @@ SelectManyIterable.prototype.getIterator = function () {
 
             if (newValues instanceof Series)
             {
-                newValues = newValues.toValues();
+                newValues = newValues.toArray();
             }
 
             var newPairs = [];
@@ -25496,9 +25551,12 @@ var createValuesIterable = function (values) {
 	}
 };
 
-//
-// Represents a time series.
-//
+/**
+ * Constructor for Series.
+ * @constructor
+ * @memberof dataForge
+ * @param {object|array} config|values - Specifies content and configuration for the Series.
+ */
 var Series = function (config) {
 
 	var self = this;
@@ -25563,6 +25621,8 @@ var SelectManyPairsIterable = require('../src/iterables/select-many-pairs');
 
 /**
  * Get an iterator for index & values of the series.
+ * 
+ * @returns {iterator} Returns an iterator that can be used to enumerate and lazily evalute the contents of the series or dataframe. 
  */
 Series.prototype.getIterator = function () {
 	var self = this;
@@ -25571,6 +25631,8 @@ Series.prototype.getIterator = function () {
 
 /**
  * Retreive the index of the series.
+ * 
+ * @returns {Series} Returns a new series that contains the values of the index for this series.
  */
 Series.prototype.getIndex = function () {
 	var self = this;
@@ -25583,6 +25645,8 @@ Series.prototype.getIndex = function () {
  * Apply a new index to the Series.
  * 
  * @param {array|Series} newIndex - The new index to apply to the Series.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with the specified index attached.
  */
 Series.prototype.withIndex = function (newIndex) {
 
@@ -25608,6 +25672,8 @@ Series.prototype.withIndex = function (newIndex) {
 
 /**
  * Reset the index of the data frame back to the default sequential integer index.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with the index reset to the default zero-based index. 
  */
 Series.prototype.resetIndex = function () {
 
@@ -25624,6 +25690,8 @@ Series.prototype.resetIndex = function () {
  * Skip a number of rows in the series.
  *
  * @param {int} numRows - Number of rows to skip.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with the specified number of values skipped. 
  */
 Series.prototype.skip = function (numRows) {
 	assert.isNumber(numRows, "Expected 'numRows' parameter to 'skip' function to be a number.");
@@ -25638,6 +25706,8 @@ Series.prototype.skip = function (numRows) {
  * Skips values in the series while a condition is met.
  *
  * @param {function} predicate - Return true to indicate the condition met.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with all initial sequential values removed that match the predicate.  
  */
 Series.prototype.skipWhile = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'skipWhile' function to be a predicate function that returns true/false.");
@@ -25654,6 +25724,8 @@ Series.prototype.skipWhile = function (predicate) {
  * Skips values in the series until a condition is met.
  *
  * @param {function} predicate - Return true to indicate the condition met.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with all initial sequential values removed that don't match the predicate.
  */
 Series.prototype.skipUntil = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'skipUntil' function to be a predicate function that returns true/false.");
@@ -25668,6 +25740,8 @@ Series.prototype.skipUntil = function (predicate) {
  * Take a number of rows in the series.
  *
  * @param {int} numRows - Number of rows to take.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with up to the specified number of values included.
  */
 Series.prototype.take = function (numRows) {
 	assert.isNumber(numRows, "Expected 'numRows' parameter to 'take' function to be a number.");
@@ -25682,6 +25756,8 @@ Series.prototype.take = function (numRows) {
  * Take values from the series while a condition is met.
  *
  * @param {function} predicate - Return true to indicate the condition met.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that only includes the initial sequential values that have matched the predicate.
  */
 Series.prototype.takeWhile = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'takeWhile' function to be a predicate function that returns true/false.");
@@ -25698,6 +25774,8 @@ Series.prototype.takeWhile = function (predicate) {
  * Take values from the series until a condition is met.
  *
  * @param {function} predicate - Return true to indicate the condition met.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that only includes the initial sequential values that have not matched the predicate.
  */
 Series.prototype.takeUntil = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'takeUntil' function to be a predicate function that returns true/false.");
@@ -25712,6 +25790,8 @@ Series.prototype.takeUntil = function (predicate) {
  * Filter a series by a predicate selector.
  *
  * @param {function} predicate - Predicte function to filter rows of the series.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe containing only the values that match the predicate. 
  */
 Series.prototype.where = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'where' function to be a function.");
@@ -25728,7 +25808,9 @@ Series.prototype.where = function (predicate) {
 /**
  * Generate a new series based on the results of the selector function.
  *
- * @param {function} selector - Selector function that transforms each value to create a new series.
+ * @param {function} selector - Selector function that transforms each value to create a new series or dataframe.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that has been transformed by the selector function.
  */
 Series.prototype.select = function (selector) {
 	assert.isFunction(selector, "Expected 'selector' parameter to 'select' function to be a function.");
@@ -25742,43 +25824,16 @@ Series.prototype.select = function (selector) {
 /**
  * Generate a new series based on the results of the selector function.
  *
- * @param {function} selector - Selector function that transforms each index/value to a create a new series.
+ * @param {function} generator - Generator function that may generator 0 or more new values from value in the series or dataframe.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with values that have been produced by the generator function. 
  */
-Series.prototype.selectPairs = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'selectPairs' function to be a function.");
+Series.prototype.selectMany = function (generator) {
+	assert.isFunction(generator, "Expected 'generator' parameter to 'Series.selectMany' function to be a function.");
 
 	var self = this;
 	return new self.Constructor({
-		iterable: new SelectPairsIterable(self.iterable, selector),
-	}); 	
-};
-
-/**
- * Generate a new series based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each value to a different data structure.
- */
-Series.prototype.selectMany = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'Series.selectMany' function to be a function.");
-
-	var self = this;
-	return new self.Constructor({
-		iterable: new SelectManyIterable(self.iterable, selector),
-	}); 	
-};
-
-/**
- * Generate a new series based on the results of the selector function.
- *
- * @param {function} selector - Selector function that transforms each value to a different data structure.
- */
-Series.prototype.selectManyPairs = function (selector) {
-	assert.isFunction(selector, "Expected 'selector' parameter to 'Series.selectManyPairs' function to be a function.");
-
-	var self = this;
-
-	return new self.Constructor({
-		iterable: new SelectManyPairsIterable(self.iterable, selector),
+		iterable: new SelectManyIterable(self.iterable, generator),
 	}); 	
 };
 
@@ -25881,16 +25936,42 @@ var orderThenBy = function (self, batch, nextSortMethod) {
 		]);
 
 		var sortedDataFrame = executeOrderBy(self, extendedBatch);
-		sortedDataFrame.thenBy = orderThenBy(self, extendedBatch, 'thenBy');
-		sortedDataFrame.thenByDescending = orderThenBy(self, extendedBatch, 'thenByDescending');		
+
+		/** 
+		 * Performs additional sorting (ascending).
+		 * 
+		 * @public
+		 * @instance
+		 * @memberof dataForge.Series
+		 * @param {function} sortSelector - Selects the value to sort by.
+		 * 
+		 * @returns {Series|DataFrame} Returns a new series or dataframe that has been sorted by the value returned by the selector. 
+		 */
+		var thenBy = orderThenBy(self, extendedBatch, 'thenBy');
+		sortedDataFrame.thenBy = thenBy;
+
+		/** 
+		 * Performs additional sorting (descending). 
+		 * 
+		 * @public
+		 * @instance
+		 * @memberof dataForge.Series
+		 * @param {function} sortSelector - Selects the value to sort by.
+		 * 
+		 * @returns {Series|DataFrame} Returns a new series or dataframe that has been sorted by the value returned by the selector. 
+		 */
+		var thenByDescending = orderThenBy(self, extendedBatch, 'thenByDescending');
+		sortedDataFrame.thenByDescending = thenByDescending;
 		return sortedDataFrame;
 	};	
 };
 
 /**
- * Sorts the series by sort selector (ascending). 
+ * Sorts the series or dataframe (ascending). 
  * 
- * @param {function} sortSelector - An function to select a value to sort by.
+ * @param {function} sortSelector - Selects the value to sort by.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that has been sorted by the value returned by the selector. 
  */
 Series.prototype.orderBy = function (sortSelector) {
 
@@ -25901,9 +25982,11 @@ Series.prototype.orderBy = function (sortSelector) {
 };
 
 /**
- * Sorts the series by sort selector (descending). 
+ * Sorts the series or dataframe (descending). 
  * 
- * @param {function} sortSelector - An function to select a value to sort by.
+ * @param {function} sortSelector - Selects the value to sort by.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that has been sorted by the value returned by the selector.
  */
 Series.prototype.orderByDescending = function (sortSelector) {
 
@@ -25913,10 +25996,14 @@ Series.prototype.orderByDescending = function (sortSelector) {
 
 /**
  * Create a new series from a slice of rows.
+ * 
+ * WARNING: To use slice, your index must already be sorted.
  *
  * @param {int|function} startIndexOrStartPredicate - Index where the slice starts or a predicate function that determines where the slice starts.
  * @param {int|function} endIndexOrEndPredicate - Marks the end of the slice, one row past the last row to include. Or a predicate function that determines when the slice has ended.
  * @param {function} [predicate] - Optional predicate to compare index against start/end index. Return true to start or stop the slice.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that contains a slice or values from the original.
  */
 Series.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPredicate, predicate) {
 
@@ -25975,10 +26062,12 @@ Series.prototype.slice = function (startIndexOrStartPredicate, endIndexOrEndPred
 };
 
 /**
- * Segment a Series into 'windows'. Returns a new Series. Each value in the new Series contains a 'window' (or segment) of the original Series.
+ * Segment a Series into 'windows'. Returns a new Series. Each value in the new Series contains a 'window' (or segment) of the original series or dataframe.
  * Use select or selectPairs to aggregate.
  *
  * @param {integer} period - The number of values in the window.
+ * 
+ * @returns {Series} Returns a new series, each value of which is a 'window' (or segment) of the original series or dataframe.  
  */
 Series.prototype.window = function (period, obsoleteSelector) {
 
@@ -26023,6 +26112,8 @@ Series.prototype.window = function (period, obsoleteSelector) {
  * Use select or selectPairs to aggregate.
  *
  * @param {integer} period - The number of values in the window.
+ * 
+ * @returns {Series} Returns a new series, each value of which is a 'window' (or segment) of the original series or dataframe.
  */
 Series.prototype.rollingWindow = function (period, obsoleteSelector) {
 
@@ -26065,15 +26156,17 @@ Series.prototype.rollingWindow = function (period, obsoleteSelector) {
 
 /** 
  * Format the data frame for display as a string.
+ * 
+ * @returns {string} Generates and returns a string representation of the series or dataframe.
  */
 Series.prototype.toString = function () {
 
 	var self = this;
 	var Table = require('easy-table');
 
-	var index = self.getIndex().toValues();
+	var index = self.getIndex().toArray();
 	var header = ["__index__", "__value__"];
-	var rows = E.from(self.toValues())
+	var rows = E.from(self.toArray())
 			.select(function (value, rowIndex) { 
 				return [index[rowIndex], value];
 			})
@@ -26093,22 +26186,30 @@ Series.prototype.toString = function () {
 /**
  * Compute the percent change for each row after the first.
  * Percentages are expressed as 0-1 values.
+ * 
+ * @returns {Series} Returns a new series where each value indicates the percent change from the previous number value in the original series.  
  */
 Series.prototype.percentChange = function () {
 
 	var self = this;
 	return self
 		.rollingWindow(2)
-		.selectPairs(function (windowIndex, window) {
-			var values = window.toValues();
+		.asPairs()
+		.select(function (pair) {
+			var window = pair[1];
+			var values = window.toArray();
 			var amountChange = values[1] - values[0]; // Compute amount of change.
 			var pctChange = amountChange / values[0]; // Compute % change.
 			return [window.getIndex().last(), pctChange]; // Return new index and value.
-		});
+		})
+		.asValues()
+		;
 };
 
 /**
  * Parse a series with string values to a series with int values.
+ * 
+ * @returns {Series} Returns a new series where string values from the original series have been parsed to integer values.
  */
 Series.prototype.parseInts = function () {
 
@@ -26131,6 +26232,8 @@ Series.prototype.parseInts = function () {
 
 /**
  * Parse a series with string values to a series with float values.
+ * 
+ * @returns {Series} Returns a new series where string values from the original series have been parsed to floating-point values.
  */
 Series.prototype.parseFloats = function () {
 
@@ -26155,6 +26258,8 @@ Series.prototype.parseFloats = function () {
  * Parse a series with string values to a series with date values.
  *
  * @param {string} [formatString] - Optional formatting string for dates.
+ * 
+ * @returns {Series} Returns a new series where string values from the original series have been parsed to Date values.
  */
 Series.prototype.parseDates = function (formatString) {
 
@@ -26183,6 +26288,8 @@ Series.prototype.parseDates = function (formatString) {
  * Convert a series of values of different types to a series of string values.
  *
  * @param {string} [formatString] - Optional formatting string for dates.
+ * 
+ * @returns {Series} Returns a new series where the values from the original series have been stringified. 
  */
 Series.prototype.toStrings = function (formatString) {
 
@@ -26211,8 +26318,9 @@ Series.prototype.toStrings = function (formatString) {
 };
 
 /** 
-  * Detect the actual types of the values that comprised the series and their frequency.
-  * Returns a new series containing the type information.
+  * Detect the types of the values in the sequence.
+  *
+  * @returns {DataFrame} Returns a dataframe that describes the data types contained in the input series or dataframe.
   */
 Series.prototype.detectTypes = function () {
 
@@ -26220,8 +26328,8 @@ Series.prototype.detectTypes = function () {
 
 	return new DataFrame({
 		columnNames: ["Type", "Frequency"],
-		values: function () { //todo: make this properly lazy.
-			var values = self.toValues();
+		values: function () {
+			var values = self.toArray();
 			var totalValues = values.length;
 
 			var typeFrequencies = E.from(values)
@@ -26261,8 +26369,9 @@ Series.prototype.detectTypes = function () {
 };
 
 /** 
-  * Detect the frequency of values in the series.
-  * Returns a new series containing the information.
+  * Detect the frequency of values in the sequence.
+  *
+  * @returns {DataFrame} Returns a dataframe that describes the values contained in the input sequence.
   */
 Series.prototype.detectValues = function () {
 
@@ -26271,7 +26380,7 @@ Series.prototype.detectValues = function () {
 	return new DataFrame({
 		columnNames: ["Value", "Frequency"],
 		values: function () {
-			var values = self.toValues();
+			var values = self.toArray();
 			var totalValues = values.length;
 
 			var valueFrequencies = E.from(values)
@@ -26308,6 +26417,8 @@ Series.prototype.detectValues = function () {
  * Produces a new series with all string values truncated to the requested maximum length.
  *
  * @param {int} maxLength - The maximum length of the string values after truncation.
+ * 
+ * @returns {Series} Returns a new series with strings that are truncated to the specified maximum length. 
  */
 Series.prototype.truncateStrings = function (maxLength) {
 	assert.isNumber(maxLength, "Expected 'maxLength' parameter to 'truncateStrings' to be an integer.");
@@ -26327,8 +26438,10 @@ Series.prototype.truncateStrings = function (maxLength) {
 
 /*
  * Extract values from the series. This forces lazy evaluation to complete.
+ * 
+ * @returns {array} Returns an array of values contained within the series or dataframe.  
  */
-Series.prototype.toValues = function () {
+Series.prototype.toArray = function () {
 
 	var self = this;
 	var iterator = self.getIterator();
@@ -26348,6 +26461,8 @@ Series.prototype.toValues = function () {
 
 /**
  * Forces lazy evaluation to complete and 'bakes' the series into memory.
+ * 
+ * @returns {Series|DataFrame} Returns a series or dataframe that has been 'baked', all lazy evaluation has completed.  
  */
 Series.prototype.bake = function () {
 
@@ -26375,6 +26490,8 @@ Series.prototype.bake = function () {
 
 /**
  * Retreive the data as pairs of [index, value].
+ * 
+ * @returns {array} Returns an array of pairs for the content of the series or dataframe. Each pair is a two element array that contains an index and a value.  
  */
 Series.prototype.toPairs = function () {
 
@@ -26396,6 +26513,8 @@ Series.prototype.toPairs = function () {
 
 /**
  * Count the number of rows in the series.
+ *
+ * @returns {array} Returns the count of all values in the series or dataframes.   
  */
 Series.prototype.count = function () {
 
@@ -26411,7 +26530,9 @@ Series.prototype.count = function () {
 };
 
 /**
- * Get the first value of the Series.
+ * Get the first value of the series or dataframe.
+ *
+ * @returns {value} Returns the first value of the series or dataframe.   
  */
 Series.prototype.first = function () {
 
@@ -26426,7 +26547,9 @@ Series.prototype.first = function () {
 };
 
 /**
- * Get the last value of the Series.
+ * Get the last value of the series or dataframe.
+ *
+ * @returns {value} Returns the last value of the series or dataframe.   
  */
 Series.prototype.last = function () {
 
@@ -26444,76 +26567,10 @@ Series.prototype.last = function () {
 	return iterator.getCurrent()[1]; // Just evaluate the last item of the iterator.
 };
 
-/**
- * Get the first index/value pair of the Series.
- */
-Series.prototype.firstPair = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No values in Series.");
-	}
-
-	return iterator.getCurrent();
-};
-
-/**
- * Get the last index/value pair of the Series.
- */
-Series.prototype.lastPair = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No values in Series.");
-	}
-
-	while (iterator.moveNext()) {
-		; // Don't evaluate each item, it's too expensive.
-	}
-
-	return iterator.getCurrent();
-};
-
-/**
- * Get the first index of the Series.
- */
-Series.prototype.firstIndex = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No values in Series.");
-	}
-
-	return iterator.getCurrent()[0]; // Extract index.
-};
-
-/**
- * Get the last index of the Series.
- */
-Series.prototype.lastIndex = function () {
-
-	var self = this;
-	var iterator = self.getIterator();
-
-	if (!iterator.moveNext()) {
-		throw new Error("No values in Series.");
-	}
-
-	while (iterator.moveNext()) {
-		; // Don't evaluate each item, it's too expensive.
-	}
-
-	return iterator.getCurrent()[0]; // Extract index.
-};
-
 /** 
- * Reverse the series.
+ * Reverse the series or dataframe.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that is the reverse of the input.
  */
 Series.prototype.reverse = function () {
 
@@ -26542,6 +26599,8 @@ Series.prototype.reverse = function () {
  * Inflate a series to a data-frame.
  *
  * @param {function} [selector] - Optional selector function that transforms each value in the series to a row in the new data-frame.
+ *
+ * @returns {DataFrame} Returns a new dataframe that has been created from the input series via the 'selector' function.
  */
 Series.prototype.inflate = function (selector) {
 
@@ -26562,9 +26621,11 @@ Series.prototype.inflate = function (selector) {
 };
 
 /** 
- * Get X values from the head of the series.
+ * Get X values from the start of the series or dataframe.
  *
  * @param {int} values - Number of values to take.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that has only the specified number of values taken from the start of the input sequence.  
  */
 Series.prototype.head = function (values) {
 
@@ -26575,9 +26636,11 @@ Series.prototype.head = function (values) {
 };
 
 /** 
- * Get X values from the tail of the series.
+ * Get X values from the end of the series or dataframe.
  *
  * @param {int} values - Number of values to take.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe that has only the specified number of values taken from the end of the input sequence.  
  */
 Series.prototype.tail = function (values) {
 
@@ -26589,6 +26652,8 @@ Series.prototype.tail = function (values) {
 
 /**
  * Sum the values in a series.
+ * 
+ * @returns {number} Returns the sum of the number values in the series.
  */
 Series.prototype.sum = function () {
 
@@ -26606,6 +26671,8 @@ Series.prototype.sum = function () {
 
 /**
  * Average the values in a series.
+ * 
+ * @returns {number} Returns the average of the number values in the series.
  */
 Series.prototype.average = function () {
 
@@ -26620,7 +26687,40 @@ Series.prototype.average = function () {
 };
 
 /**
+ * Get the median value in the series. Not this sorts the series, so can be expensive.
+ * 
+ * @returns {Number} Returns the median of the values in the series.
+ */
+Series.prototype.median = function () {
+
+	//
+	// From here: http://stackoverflow.com/questions/5275115/add-a-median-method-to-a-list
+	//
+	var self = this;
+	var count = self.count();
+	if (count === 0) {
+		return 0;
+	}
+
+	var ordered = self.orderBy(function (value) {
+			return value;
+		});
+	
+	if ((count % 2) == 0) {
+		// Even.
+		var a = ordered.at(count / 2 - 1);
+        var b = ordered.at(count / 2);
+        return (a + b) / 2;	
+	}
+
+	// Odd
+	return ordered.at(Math.floor(count / 2));
+};
+
+/**
  * Get the min value in the series.
+ * 
+ * @returns {number} Returns the minimum of the number values in the series.
  */
 Series.prototype.min = function () {
 
@@ -26634,6 +26734,8 @@ Series.prototype.min = function () {
 
 /**
  * Get the max value in the series.
+ * 
+ * @returns {number} Returns the maximum of the number values in the series.
  */
 Series.prototype.max = function () {
 
@@ -26650,6 +26752,8 @@ Series.prototype.max = function () {
  *
  * @param {object} [seed] - The seed value for producing the aggregation.
  * @param {function} selector - Function that takes the seed and then each value in the series and produces the aggregate value.
+ * 
+ * @returns {value} Returns a new value that has been aggregated from the input sequence by the 'selector' function. 
  */
 Series.prototype.aggregate = function (seedOrSelector, selector) {
 
@@ -26677,6 +26781,8 @@ Series.prototype.aggregate = function (seedOrSelector, selector) {
  *
  * @param {function} keySelector - Function that selects keys for the resulting object.
  * @param {valueSelector} keySelector - Function that selects values for the resulting object.
+ * 
+ * @returns {object} Returns a JavaScript object generated from the input sequence by the key and value selector funtions. 
  */
 Series.prototype.toObject = function (keySelector, valueSelector) {
 
@@ -26685,14 +26791,16 @@ Series.prototype.toObject = function (keySelector, valueSelector) {
 	assert.isFunction(keySelector, "Expected 'keySelector' parameter to toObject to be a function.");
 	assert.isFunction(valueSelector, "Expected 'valueSelector' parameter to toObject to be a function.");
 
-	return E.from(self.toValues()).toObject(keySelector, valueSelector);
+	return E.from(self.toArray()).toObject(keySelector, valueSelector);
 };
 
 /**
  * Zip together multiple series or dataframes to produce a new series or dataframe.
  *
- * @param {...series|dataframe} series|dataframe - Each series or dataframe that is to be zipped.
+ * @param {...Series|DataFrame} sequence - Multiple parameters, one for each sequence to be zipped.
  * @param {function} selector - Selector function that produces a new series or dataframe based on the inputs.
+ * 
+ * @returns {Series|DataFrame} Returns a single series or dataframe that is the combination of multiple input sequences that have been 'zipped' together by the 'selector' function.
  */
 Series.prototype.zip = function () {
 
@@ -26719,7 +26827,7 @@ Series.prototype.zip = function () {
 	return zip(
 		inputSeries, 
 		function (series) {
-			return selector.apply(undefined, series.toValues());
+			return selector.apply(undefined, series.toArray());
 		},
 		self.Constructor
 	);
@@ -26729,6 +26837,8 @@ Series.prototype.zip = function () {
  * Invoke a callback function for each value in the series.
  *
  * @param {function} callback - The calback to invoke for each value.
+ * 
+ * @returns {Series|DataFrame} Returns the input sequence with no modifications.   
  */
 Series.prototype.forEach = function (callback) {
 	assert.isFunction(callback, "Expected 'callback' parameter to 'forEach' function to be a function.");
@@ -26746,12 +26856,14 @@ Series.prototype.forEach = function (callback) {
 };
 
 /**
- * Determine if the predicate returns truthy for all values.
+ * Determine if the predicate returns truthy for all values in the sequence.
  * Returns false as soon as the predicate evaluates to falsy.
  * Returns true if the predicate returns truthy for all values in the Series.
  * Returns false if the series is empty.
  *
  * @param {function} predicate - Predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
+ *
+ * @returns {boolean} Returns true if the predicate has returned truthy for every value in the sequence, otherwise returns false. 
  */
 Series.prototype.all = function (predicate) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'all' to be a function.")
@@ -26775,11 +26887,14 @@ Series.prototype.all = function (predicate) {
 };
 
 /**
- * Determine if the predicate returns truthy for any of the values.
+ * Determine if the predicate returns truthy for any of the values in the sequence.
  * Returns true as soon as the predicate returns truthy.
  * Returns false if the predicate never returns truthy.
+ * If no predicate is specified the value itself is checked. 
  *
  * @param {function} [predicate] - Optional predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
+ *
+ * @returns {boolean} Returns true if the predicate has returned truthy for any value in the sequence, otherwise returns false. 
  */
 Series.prototype.any = function (predicate) {
 	if (predicate) {
@@ -26805,12 +26920,15 @@ Series.prototype.any = function (predicate) {
 };
 
 /**
- * Determine if the predicate returns truthy for none of the values.
+ * Determine if the predicate returns truthy for none of the values in the sequence.
  * Returns true for an empty Series.
  * Returns true if the predicate always returns falsy.
  * Otherwise returns false.
+ * If no predicate is specified the value itself is checked.
  *
  * @param {function} [predicate] - Optional predicate function that receives each value in turn and returns truthy for a match, otherwise falsy.
+ * 
+ * @returns {boolean} Returns true if the predicate has returned truthy for no values in the sequence, otherwise returns false. 
  */
 Series.prototype.none = function (predicate) {
 
@@ -26840,6 +26958,8 @@ Series.prototype.none = function (predicate) {
  * Group sequential duplicate values into a Series of windows.
  *
  * @param {function} selector - Selects the value used to compare for duplicates.
+ * 
+ * @returns {Series|DataFrame} Returns a series of groups. Each group is itself a series or dataframe. 
  */
 Series.prototype.sequentialDistinct = function (selector) {
 	
@@ -26857,15 +26977,21 @@ Series.prototype.sequentialDistinct = function (selector) {
 	return self.variableWindow(function (a, b) {
 			return selector(a) === selector(b);
 		})
-		.selectPairs(function (windowIndex, window) {
+		.asPairs()
+		.select(function (pair) {
+			var window = pair[1];
 			return [window.getIndex().first(), window.first()];
-		});
+		})
+		.asValues()
+		;
 };
 
 /**
  * Group distinct values in the Series into a Series of windows.
  *
  * @param {function} selector - Selects the value used to compare for duplicates.
+ * 
+ * @returns {Series|DataFrame} Returns a series or dataframe containing only unique values as determined by the 'selector' function. 
  */
 Series.prototype.distinct = function (selector) {
 	
@@ -26941,6 +27067,8 @@ Series.prototype.distinct = function (selector) {
  * Groups sequential values into variable length 'windows'. The windows can then be transformed/transformed using selectPairs or selectManyPairs.
  *
  * @param {function} comparer - Predicate that compares two values and returns true if they should be in the same window.
+ * 
+ * @returns {Series|DataFrame} Returns a series of groups. Each group is itself a series or dataframe that contains the values in the 'window'. 
  */
 Series.prototype.variableWindow = function (comparer, obsoleteSelector) {
 	
@@ -27007,6 +27135,8 @@ Series.prototype.variableWindow = function (comparer, obsoleteSelector) {
  * Insert a pair at the start of a Series.
  *
  * @param {pair} pair - The pair to insert.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with the specified pair inserted.
  */
 Series.prototype.insertPair = function (pair) {
 	assert.isArray(pair, "Expected 'pair' parameter to 'Series.insertPair' to be an array.");
@@ -27025,6 +27155,8 @@ Series.prototype.insertPair = function (pair) {
  * Append a pair to the end of a Series.
  *
  * @param {pair} pair - The pair to append.
+ * 
+ * @returns {Series|DataFrame} Returns a new series or dataframe with the specified pair appended.
  */
 Series.prototype.appendPair = function (pair) {
 	assert.isArray(pair, "Expected 'pair' parameter to 'Series.appendPair' to be an array.");
@@ -27046,6 +27178,8 @@ Series.prototype.appendPair = function (pair) {
  *
  * @param {function} predicate - Predicate that is passed pairA and pairB, two consecutive rows, return truthy if there is a gap between the rows, or falsey if there is no gap.
  * @param {function} generator - Generator that is passed pairA and pairB, two consecutive rows, returns an array of pairs that fills the gap between the rows.
+ *
+ * @returns {Series} Returns a new series with gaps filled in.
  */
 Series.prototype.fillGaps = function (predicate, generator) {
 	assert.isFunction(predicate, "Expected 'predicate' parameter to 'Series.fillGaps' to be a predicate function that returns a boolean.")
@@ -27054,9 +27188,11 @@ Series.prototype.fillGaps = function (predicate, generator) {
 	var self = this;
 
 	return self.rollingWindow(2)
-		.selectManyPairs(function (windowIndex, window) {
-			var pairA = window.firstPair();
-			var pairB = window.lastPair();
+		.asPairs()
+		.selectMany(function (pair) {
+			var window = pair[1];
+			var pairA = window.asPairs().first();
+			var pairB = window.asPairs().last();
 			if (!predicate(pairA, pairB)) {
 				return [pairA];
 			}
@@ -27066,7 +27202,8 @@ Series.prototype.fillGaps = function (predicate, generator) {
 
 			return [pairA].concat(generatedRows);
 		})
-		.appendPair(self.lastPair())
+		.asValues()
+		.appendPair(self.asPairs().last())
 		;
 };
 
@@ -27074,6 +27211,8 @@ Series.prototype.fillGaps = function (predicate, generator) {
  * Group the series according to the selector.
  *
  * @param {function} selector - Selector that defines the value to group by.
+ *
+ * @returns {Series} Returns a series of groups. Each group is a series with values that have been grouped by the 'selector' function.
  */
 Series.prototype.groupBy = function (selector) {
 
@@ -27100,9 +27239,11 @@ Series.prototype.groupBy = function (selector) {
 };
 
 /**
- * Group sequential duplicate values into a Series of windows.
+ * Group sequential values into a Series of windows.
  *
  * @param {function} selector - Selector that defines the value to group by.
+ *
+ * @returns {Series} Returns a series of groups. Each group is a series with values that have been grouped by the 'selector' function.
  */
 Series.prototype.groupSequentialBy = function (selector) {
 
@@ -27126,6 +27267,8 @@ Series.prototype.groupSequentialBy = function (selector) {
  * Get the value at a specified index.
  *
  * @param {function} index - Index to for which to retreive the value.
+ *
+ * @returns {value} Returns the value from the specified index in the sequence. 
  */
 Series.prototype.at = function (index) {
 
@@ -27154,22 +27297,11 @@ Series.prototype.at = function (index) {
 };
 
 /**
- * Returns true if the Series contains the specified value.
- *
- * @param {function} value - The value to check for in the Series.
- */
-Series.prototype.contains = function (value) {
-
-	var self = this;
-	return self.any(function (searchValue) {
-			return searchValue === value;
-		});
-};
-
-/**
  * Concatenate multiple other series onto this series.
  * 
- * @param {array|Series*} series - Multiple arguments. Each can be either a series or an array of series. 
+ * @param {...array|Series} series - Multiple arguments. Each can be either a series or an array of series.
+ * 
+ * @returns {Series} Returns a single series concatenated from multiple input series. 
  */
 Series.prototype.concat = function () {
 
@@ -27197,7 +27329,9 @@ Series.prototype.concat = function () {
  * @param {Series|DataFrame} inner - The inner Series or DataFrame to join.
  * @param {function} outerKeySelector - Selector that chooses the join key from the outer sequence.
  * @param {function} innerKeySelector - Selector that chooses the join key from the inner sequence.
- * @param {function} resultSelector - Selector that defines how to merge outer and inner values. 
+ * @param {function} resultSelector - Selector that defines how to merge outer and inner values.
+ * 
+ * @returns {Series|DataFrame} Returns the joined series or dataframe. 
  */
 Series.prototype.join = function (inner, outerKeySelector, innerKeySelector, resultSelector) {
 
@@ -27242,6 +27376,8 @@ Series.prototype.join = function (inner, outerKeySelector, innerKeySelector, res
  * Implementation from here:
  * 
  * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ * 
+ * @returns {Series|DataFrame} Returns the joined series or dataframe. 
  */
 Series.prototype.joinOuter = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
 
@@ -27292,6 +27428,8 @@ Series.prototype.joinOuter = function (rightSeries, outerKeySelector, innerKeySe
  * Implementation from here:
  * 
  * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ * 
+ * @returns {Series|DataFrame} Returns the joined series or dataframe. 
  */
 Series.prototype.joinOuterLeft = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
 
@@ -27333,6 +27471,8 @@ Series.prototype.joinOuterLeft = function (rightSeries, outerKeySelector, innerK
  * Implementation from here:
  * 
  * 	http://blogs.geniuscode.net/RyanDHatch/?p=116
+ * 
+ * @returns {Series|DataFrame} Returns the joined series or dataframe. 
  */
 Series.prototype.joinOuterRight = function (rightSeries, outerKeySelector, innerKeySelector, resultSelector) {
 
@@ -27363,6 +27503,8 @@ Series.prototype.joinOuterRight = function (rightSeries, outerKeySelector, inner
  * Returns the specified default sequence if the Series or DataFrame is empty. 
  *
  * @param {array|Series|DataFrame} defaultSequence - Default sequence to return if the Series or DataFrame is empty.
+ * 
+ * @returns {Series|DataFrame} Returns 'defaultSequence' if the input sequence is empty. 
  */
 Series.prototype.defaultIfEmpty = function (defaultSequence) {
 
@@ -27390,7 +27532,9 @@ Series.prototype.defaultIfEmpty = function (defaultSequence) {
  * Returns the unique union of values between two Series or DataFrames.
  *
  * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
- * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ * @param {function} [comparer] - Optional comparer that selects the value to compare.
+ * 
+ * @returns {Series|DataFrame} Returns the union of two sequences.
  */
 Series.prototype.union = function (other, selector) {
 
@@ -27411,6 +27555,8 @@ Series.prototype.union = function (other, selector) {
  *
  * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
  * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ * 
+ * @returns {Series|DataFrame} Returns the intersection of two sequences.
  */
 Series.prototype.intersection = function (other, comparer) {
 
@@ -27442,6 +27588,8 @@ Series.prototype.intersection = function (other, comparer) {
  *
  * @param {Series|DataFrame} other - The other Series or DataFrame to combine.
  * @param {function} [comparer] - Optional comparer that selects the value to compare.  
+ * 
+ * @returns {Series|DataFrame} Returns the difference of one sequence to another.
  */
 Series.prototype.except = function (other, comparer) {
 
@@ -27467,6 +27615,44 @@ Series.prototype.except = function (other, comparer) {
 		})
 		;
 };
+
+/** 
+ * Convert a series or a dataframe to a series of pairs in the form [pair1, pair2, pair3, ...] where each pair is [index, value].
+ * 
+ * @returns {Series} Returns a series of pairs for each index and value pair in the input sequence.
+ */
+Series.prototype.asPairs = function () {
+
+	var self = this;
+	return new Series({
+		iterable: new PairsIterable(
+			new CountIterable(),
+			self
+		),
+	})
+
+};
+
+/** 
+ * Convert a series of pairs to back to a series of values.
+ * 
+ * @returns {Series} Returns a series of values where each pair has been extracted from the value of the input series.
+ */
+Series.prototype.asValues = function () {
+
+	var self = this;
+	return new Series({
+		iterable: new SelectPairsIterable(
+			self,
+			function (index, value) {
+				return [value[0], value[1]];
+			}
+		)
+	})
+
+};
+
+
 },{"../src/iterables/array":49,"../src/iterables/count":50,"../src/iterables/empty":51,"../src/iterables/extract":52,"../src/iterables/pairs":53,"../src/iterables/select-many":55,"../src/iterables/select-many-pairs":54,"../src/iterables/select-pairs":56,"../src/iterables/select-values":57,"../src/iterables/skip":59,"../src/iterables/skip-while":58,"../src/iterables/take":61,"../src/iterables/take-while":60,"../src/iterables/where":62,"../src/iterators/count":65,"../src/iterators/empty":66,"../src/iterators/pair":68,"../src/iterators/select":70,"../src/iterators/select-many":69,"../src/iterators/take":74,"../src/iterators/take-while":73,"../src/iterators/where":76,"./concat-series":46,"./dataframe":47,"./iterators/array":63,"./iterators/skip":72,"./iterators/skip-while":71,"./iterators/validate":75,"./zip":79,"chai":4,"easy-table":40,"extend":41,"linq":42,"moment":43}],78:[function(require,module,exports){
 'use strict';
 
@@ -27507,7 +27693,7 @@ module.exports = function (input, selector, Constructor) {
 
 	var toZip = E.from(input)
 		.select(function (sequence) {
-			return sequence.toValues();
+			return sequence.toArray();
 		})
 		.toArray();
 
