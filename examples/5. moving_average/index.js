@@ -1,7 +1,6 @@
 'use strict';
 
 var dataForge = require('../../../data-forge-js/index.js');
-var fs = require('fs');
 var E = require('linq');
 
 //
@@ -28,9 +27,9 @@ var computeSimpleMovingAverage = function (dataFrame, period) {
 };
 
 var dataFrame = dataForge
-		.fromCSV(fs.readFileSync('share_prices.csv', 'utf8'))
+		.readCSVFileSync('share_prices.csv')
 		.parseFloats('Close')
 		;
 
 var withMovingAvg = computeSimpleMovingAverage(dataFrame, 30); // 30 day moving average.
-fs.writeFileSync('output.csv', withMovingAvg.toCSV());
+withMovingAvg.writeCSVFileSync('output.csv');
