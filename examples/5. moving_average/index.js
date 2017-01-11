@@ -27,9 +27,10 @@ var computeSimpleMovingAverage = function (dataFrame, period) {
 };
 
 var dataFrame = dataForge
-		.readCSVFileSync('share_prices.csv')
+		.readFileSync('share_prices.csv')
+		.parseCSV()
 		.parseFloats('Close')
 		;
 
 var withMovingAvg = computeSimpleMovingAverage(dataFrame, 30); // 30 day moving average.
-withMovingAvg.writeCSVFileSync('output.csv');
+withMovingAvg.asCSV().writeFileSync('output.csv');
