@@ -1,7 +1,6 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
-var E = require('linq');
+var dataForge = require('data-forge-ts-beta-test');
 
 //
 // Create a new data frame containing a simple moving average of the share price.
@@ -33,4 +32,7 @@ var dataFrame = dataForge
 		;
 
 var withMovingAvg = computeSimpleMovingAverage(dataFrame, 30); // 30 day moving average.
+
+console.log(withMovingAvg.head(12).toString());
+
 withMovingAvg.asCSV().writeFileSync('output.csv');

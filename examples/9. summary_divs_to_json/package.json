@@ -6,8 +6,6 @@
   },
   "author": "",
   "dependencies": {
-    "chai": "^3.4.0",
-    "glob": "^5.0.15",
-    "linq": "^3.0.5"
+    "data-forge-ts-beta-test": "1.0.3"
   }
 }

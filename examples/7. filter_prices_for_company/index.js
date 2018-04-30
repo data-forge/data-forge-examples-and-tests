@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
+var dataForge = require('data-forge-ts-beta-test');
 var fs = require('fs');
 
 //
@@ -17,4 +17,7 @@ var loadSharePricesForCompany = function (companyCode, filePath) {
 };
 
 var dataFrame = loadSharePricesForCompany('ABC', 'share_prices.csv')
+
+console.log(dataFrame.head(10).toString());
+
 fs.writeFileSync('output.csv', dataFrame.toCSV());

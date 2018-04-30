@@ -1,9 +1,8 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
+var dataForge = require('data-forge-ts-beta-test');
 var fs = require('fs');
 var glob = require('glob');
-var E = require('linq');
 
 //
 // Load as single CSV file containing share prices.
@@ -17,9 +16,12 @@ var loadSharePricesFile = function (filePath) {
 // 
 var loadSharePrices = function () {
 	var filePaths = glob.sync("./prices/*");
-	var loaded = E.from(filePaths).select(loadSharePricesFile).toArray();
-	return dataForge.concatDataFrames(loaded);
+	var loaded = filePaths.map(loadSharePricesFile);
+	return dataForge.DataFrame.concat(loaded);
 };
 
 var dataFrame = loadSharePrices();
+
+console.log(dataFrame.head(10).toString());
+
 fs.writeFileSync('output.csv', dataFrame.toCSV());

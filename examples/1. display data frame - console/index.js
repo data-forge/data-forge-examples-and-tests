@@ -1,24 +1,26 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
-var E = require('linq');
+var dataForge = require('data-forge-ts-beta-test');
 
 // 
 // Create a simple data frame.
 //
-var values = E
-	.range(0, 14)
-	.select(function (i) {
-		return [i, Math.sin(i), Math.cos(i)];
-	})
-	.toArray();
-
+var values = dataForge.range(0, 14)
+    .select(i => [i, Math.sin(i), Math.cos(i)]);
+    
 var dataFrame = new dataForge.DataFrame({
 		columnNames: ["index", "Sin", "Cos"], 
-		values: values 
+		rows: values 
 	})
 	.setIndex("index")
-	.dropSeries("index");
+    .dropSeries("index");
+    
+
+    console.log('!!');
+
+console.log(dataFrame.toString()); //fio:
+console.log('!!');
+
 
 console.log(dataFrame.skip(4).take(5).toString());
 

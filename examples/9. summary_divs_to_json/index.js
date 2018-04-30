@@ -1,44 +1,25 @@
 'use strict';
 
+var dataForge = require('data-forge-ts-beta-test');
 var fs = require('fs');
-var dataForge = require('../../../data-forge-js/index.js');
-var moment = require('moment');
 
-//
-// Summarise dividends by year.
-//
-var summarizeDividends = function (dataFrame) {
+var dataFrame = dataForge.fromCSV(fs.readFileSync('dividends.csv', 'utf8'))
+    .parseDates("Ex Date", "DD-MMM-YYYY")
+    .generateSeries({
+        Year: row => row['Ex Date'].getFullYear(),
+    })
+    .parseFloats("Amount");
 
-	return dataFrame
-		.withSeries({
-			Year: function (df) {
-				return df.deflate(function (row) {
-						return moment(row['Ex Date'], 'DD-MMM-YYYY').toDate().getFullYear(); // Extract year. 
-					});				
-			},
-		})
-		.groupBy(function (row) {
-			return row.Year; // Group by year.
-		})
-		.toObject(
-			// Key
-			function (dividendsByYear) {
-				return dividendsByYear.first().Year;
-			},
-			// Value
-			function (dividendsByYear) {
-				return dividendsByYear
-					.aggregate(0, function (prev, dividend) {
-						return prev + dividend.Amount;
-					});
-			}
-		);
-};
+var summary = dataFrame.groupBy(row => row.Year)
+    .inflate(group => {
+        return {
+            Year: group.first().Year,
+            Amount: group.deflate(row => row.Amount).sum(),
+        };
+    });
 
-var dataFrame = dataForge
-	.fromCSV(fs.readFileSync('dividends.csv', 'utf8'))
-	.parseFloats("Amount")
-	;
+var summaryObj = summary.toObject(row => row.Year, row => row.Amount);
 
-var summary = summarizeDividends(dataFrame);
-fs.writeFileSync('output.json', JSON.stringify(summary, null, 4));
+console.log(summaryObj);
+
+fs.writeFileSync('output.json', JSON.stringify(summaryObj, null, 4));

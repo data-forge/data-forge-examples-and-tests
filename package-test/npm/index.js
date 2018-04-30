@@ -1,21 +1,17 @@
 'use strict';
 
-var dataForge = require('data-forge');
-var E = require('linq');
+var dataForge = require('data-forge-ts-beta-test');
 
 // 
 // Create a simple data frame.
 //
-var values = E
+var values = dataForge
 	.range(0, 14)
-	.select(function (i) {
-		return [i, Math.sin(i), Math.cos(i)];
-	})
-	.toArray();
-
+    .select(i => [i, Math.sin(i), Math.cos(i)]);
+    
 var dataFrame = new dataForge.DataFrame({
 		columnNames: ["index", "Sin", "Cos"], 
-		values: values
+		rows: values
 	})
 	.setIndex("index")
 	.dropSeries("index");

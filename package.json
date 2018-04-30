@@ -20,8 +20,5 @@
   },
   "homepage": "https://github.com/data-forge/data-forge-js-examples-and-tests#readme",
   "dependencies": {
-    "linq": "^3.0.5",
-    "moment": "^2.15.1",
-    "promised-mongo": "^1.2.0"
   }
 }
