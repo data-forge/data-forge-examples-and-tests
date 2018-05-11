@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('data-forge-ts-beta-test');
+var dataForge = require('data-forge');
 
 // 
 // Create a simple data frame.

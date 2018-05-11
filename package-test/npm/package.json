@@ -6,6 +6,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "data-forge-ts-beta-test": "*"
+    "data-forge": "*"
   }
 }

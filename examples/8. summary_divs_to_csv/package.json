@@ -6,6 +6,6 @@
   },
   "author": "",
   "dependencies": {
-    "data-forge-ts-beta-test": "*"
+    "data-forge": "*"
   }
 }

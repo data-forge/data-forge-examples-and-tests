@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('data-forge-ts-beta-test');
+var dataForge = require('data-forge');
 var fs = require('fs');
 
 var dataFrame = dataForge.fromCSV(fs.readFileSync('dividends.csv', 'utf8'))

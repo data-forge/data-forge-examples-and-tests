@@ -2,6 +2,6 @@
   "name": "example-1",
   "version": "1.0.0",
   "dependencies": {
-    "data-forge-ts-beta-test": "*"
+    "data-forge": "*"
   }
 }
