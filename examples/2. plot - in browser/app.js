@@ -48,8 +48,9 @@ $(function() {
 
 	var dataFrame = new dataForge.DataFrame({
 			columnNames: ["index", "Sin", "Cos"], 
-			values: values
-		});
+			rows: values
+        });
+        
 	
 	//
 	// Plot the data frame.

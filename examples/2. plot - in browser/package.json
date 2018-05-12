@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "data-forge": "*",
+    "linq": "3.1.0"
+  }
+}

@@ -1,4 +1,3 @@
 
-window.dataForge = require('../../../data-forge-js/index.js');
-window.moment = require('moment');
+window.dataForge = require('data-forge');
 window.E = require('linq');
