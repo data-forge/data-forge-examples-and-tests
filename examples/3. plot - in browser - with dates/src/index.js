@@ -1,5 +1,9 @@
 'use strict'
 
+const dataForge = require('data-forge');
+const moment = require('moment');
+const E = require('linq');
+
 $(function() {
 	
 	//
@@ -9,8 +13,7 @@ $(function() {
 
 		var remainingColumnNames = dataFrame
 			.dropSeries(indexColumnName)
-			.getColumnNames()
-			;
+			.getColumnNames();
 
 		var flotSeries = E.from(remainingColumnNames)
 			.select(function (columnName) {
@@ -46,7 +49,7 @@ $(function() {
 
 	var dataFrame = new dataForge.DataFrame({
 			columnNames: ["Date", "Sin", "Cos"], 
-			values: values
+			rows: values
 		});
 	
 	//
