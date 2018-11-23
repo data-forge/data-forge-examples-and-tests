@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('data-forge-beta');
+var dataForge = require('data-forge');
 require('data-forge-fs');
 
 // 

@@ -1,4 +1,4 @@
-import * as dataForge from 'data-forge-beta';
+import * as dataForge from 'data-forge';
 import 'data-forge-fs';
 
 // 
