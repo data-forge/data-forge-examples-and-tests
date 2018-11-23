@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
+var dataForge = require('data-forge');
 var glob = require('glob');
 var E = require('linq');
 var fs = require('fs');
@@ -20,17 +20,25 @@ var loadSharePricesFile = function (filePath) {
 var loadSharePrices = function () {
 	var filePaths = glob.sync("./prices/*");
 	var loaded = E.from(filePaths).select(loadSharePricesFile).toArray();
-	return dataForge.concatDataFrames(loaded);
+	return dataForge.DataFrame.concat(loaded);
 };
 
-var prices = loadSharePrices();
-var dividends = dataForge.fromCSV(fs.readFileSync('dividends.csv', 'utf8'));
+var sharePricesDataFrame = loadSharePrices();
+console.log("shares:");
+console.log(sharePricesDataFrame.head(5).toString());
 
-var merged = dataForge
-	.merge(sharePricesDataFrame, dividendsDataFrame, {
-		left: "date",
-		right: "ex date",
-		how: 'inner',
-	});
+var dividendsDataFrame = dataForge.fromCSV(fs.readFileSync('dividends.csv', 'utf8'));
+console.log("dividends:");
+console.log(dividendsDataFrame.head(5).toString());
+
+var merged = sharePricesDataFrame.join(
+    dividendsDataFrame, 
+    sharePrice => sharePrice.date,
+    dividend => dividend["ex date"],
+    (sharePrice, dividend) => Object.assign({}, sharePrice, dividend)
+);
+
+console.log("merged:");
+console.log(merged.toString());
 
 fs.writeFileSync('output.csv', merged.toCSV());

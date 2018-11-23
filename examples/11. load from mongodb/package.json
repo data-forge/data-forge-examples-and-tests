@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "start": "node index.js"
+    },
+  "dependencies": {
+    "data-forge": "*",
+    "promised-mongo": "^1.2.0"
+  }
+}

@@ -14,13 +14,6 @@ var dataFrame = new dataForge.DataFrame({
 	})
 	.setIndex("index")
     .dropSeries("index");
-    
-
-    console.log('!!');
-
-console.log(dataFrame.toString()); //fio:
-console.log('!!');
-
 
 console.log(dataFrame.skip(4).take(5).toString());
 

@@ -1,6 +1,6 @@
 'use strict';
 
-var dataForge = require('../../../data-forge-js/index.js');
+var dataForge = require('data-forge');
 
 var salesData = new dataForge.DataFrame([
     {
@@ -44,7 +44,7 @@ var summarized = salesData
         ClientName: group.first().ClientName,
 
         // Sum sales per client.
-        Sales: group.select(row => row.Sales).sum(),
+        Sales: group.deflate(row => row.Sales).sum(),
     }))
     .inflate() // Series -> DataFrame.
     ;

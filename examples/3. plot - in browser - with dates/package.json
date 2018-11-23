@@ -1,8 +1,9 @@
 {
     "scripts": {
-        "build": "webpack"
+        "start": "webpack && live-server"
     },
     "devDependencies": {
+        "live-server": "^1.2.0",
         "webpack": "4.8.3",
         "webpack-cli": "2.1.3"
     },

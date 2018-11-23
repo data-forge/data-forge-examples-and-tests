@@ -1,6 +1,7 @@
 'use strict';
 
 var dataForge = require('data-forge');
+require('data-forge-fs');
 
 //
 // Create a new data frame containing a simple moving average of the share price.
