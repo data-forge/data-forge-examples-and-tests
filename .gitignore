@@ -34,3 +34,6 @@ node_modules
 package-test/bower/bower_components/
 package-test/npm/js/test.csv
 package-test/npm/ts/test.csv
+package-test/browser/package-lock.json
+package-test/npm/ts/package-lock.json
+package-test/npm/js/package-lock.json

@@ -4,12 +4,15 @@
   "description": "Data-Forge browser example.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "live-server"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "data-forge": "*"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.1"
   }
 }
