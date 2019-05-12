@@ -1,0 +1,22 @@
+{
+  "name": "browser-esm",
+  "version": "1.0.0",
+  "description": "Data-Forge browser-esm example.",
+  "scripts": {
+    "start": "rollup --config --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "data-forge": "*"
+  },
+  "devDependencies": {
+    "rollup": "^1.11.3",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-livereload": "^1.0.0",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-sizes": "^0.5.1"
+  }
+}
